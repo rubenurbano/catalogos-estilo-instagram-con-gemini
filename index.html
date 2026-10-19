@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catálogos estilo Instagram con Gemini — Tutorial interactivo</title>
+<meta name="description" content="Tutorial paso a paso para crear un catálogo estilo Instagram con Gemini, Google Sheets, Apps Script y Google AI Studio. Sin programar y sin coste.">
+<style>
+/* ============ VARIABLES Y TEMA ============ */
+:root{
+  --bg:#0a0e1a; --card:#0f172a; --card2:#111c31; --blue:#1e3a5f;
+  --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#f472b6;
+  --border:#1e293b; --ok:#34d399; --warn:#fbbf24; --danger:#f87171;
+  --btn-bg:#38bdf8; --btn-fg:#04121f;
+  --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+[data-theme="light"]{
+  --bg:#f1f5f9; --card:#ffffff; --card2:#f8fafc; --blue:#dbeafe;
+  --text:#0f172a; --muted:#475569; --accent:#0369a1; --accent2:#be185d;
+  --border:#dbe3ee; --ok:#047857; --warn:#b45309; --danger:#b91c1c;
+  --btn-bg:#0369a1; --btn-fg:#ffffff;
+  --shadow:0 10px 30px rgba(15,23,42,.08);
+}
+*{box-sizing:border-box}
+html{font-size:16px;scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.65;-webkit-text-size-adjust:100%;
+}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+p{margin:.6em 0}
+ul,ol{margin:.6em 0;padding-left:1.3em}
+li{margin:.3em 0}
+strong{color:var(--text)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ============ PROGRESO ============ */
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));z-index:100;transition:width .1s linear}
+
+/* ============ CABECERA ============ */
+.topbar{background:var(--bg);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;min-width:0;flex:1 1 240px}
+.brand strong{font-size:1rem;line-height:1.3}
+.brand small{color:var(--muted);font-size:.72rem}
+.controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:2 1 320px;justify-content:flex-end}
+.btn{
+  background:var(--card);color:var(--text);border:1px solid var(--border);
+  border-radius:10px;padding:8px 10px;font:inherit;font-size:.82rem;
+  cursor:pointer;min-height:40px;line-height:1.2;
+}
+.btn:hover,.btn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* ============ BUSCADOR ============ */
+.search-wrap{position:relative;flex:1 1 190px;min-width:150px}
+#searchInput{
+  width:100%;min-height:40px;border-radius:10px;border:1px solid var(--border);
+  background:var(--card);color:var(--text);padding:8px 12px;font:inherit;font-size:.85rem;
+}
+#searchInput:focus{outline:2px solid var(--accent);outline-offset:1px}
+.search-results{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);
+  border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);
+  max-height:60vh;overflow:auto;z-index:80;padding:6px;
+}
+.search-results[hidden]{display:none}
+.search-item{
+  display:flex;flex-direction:column;gap:2px;width:100%;text-align:left;
+  background:transparent;border:0;border-radius:8px;padding:8px 10px;
+  cursor:pointer;color:var(--text);font:inherit;
+}
+.search-item:hover,.search-item:focus-visible{background:var(--blue);outline:none}
+.search-tab{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;color:var(--accent)}
+.search-title{font-size:.84rem}
+.search-empty{padding:10px;color:var(--muted);font-size:.84rem}
+
+/* ============ PESTAÑAS ============ */
+.tabbar{position:sticky;top:0;z-index:60;background:var(--bg);border-bottom:1px solid var(--border)}
+.tabbar-inner{max-width:1100px;margin:0 auto;display:flex;gap:6px;overflow-x:auto;padding:8px 12px;scrollbar-width:thin}
+.tab{
+  white-space:nowrap;background:transparent;border:1px solid transparent;border-radius:999px;
+  padding:8px 14px;color:var(--muted);font:inherit;font-size:.84rem;cursor:pointer;min-height:40px;
+}
+.tab:hover{color:var(--text);border-color:var(--border)}
+.tab[aria-selected="true"]{background:var(--blue);color:var(--text);border-color:var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* ============ CONTENIDO ============ */
+main{max-width:1100px;margin:0 auto;padding:18px 16px 90px}
+.tab-panel{display:none}
+.tab-panel.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h1{font-size:1.55rem;line-height:1.25;margin:.2em 0 .3em;letter-spacing:-.01em}
+h2{font-size:1.2rem;line-height:1.3;margin:.2em 0 .4em}
+h3{font-size:1rem;margin:.9em 0 .3em}
+h4{font-size:.94rem;margin:.8em 0 .2em;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.lead{font-size:1rem;color:var(--muted)}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px;margin:0 0 16px;box-shadow:var(--shadow);scroll-margin-top:72px;
+}
+.card > :first-child{margin-top:0}
+.card > :last-child{margin-bottom:0}
+.grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr}.grid.three{grid-template-columns:repeat(3,1fr)}}
+.mini{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.mini h3{margin-top:0;font-size:.95rem}
+.mini p{font-size:.88rem;color:var(--muted);margin:.3em 0 0}
+
+/* Avisos */
+.note,.warn,.danger,.expect{
+  border-left:4px solid var(--accent);background:rgba(56,189,248,.09);
+  padding:10px 14px;border-radius:0 10px 10px 0;margin:12px 0;font-size:.92rem;
+}
+.warn{border-left-color:var(--warn);background:rgba(251,191,36,.11)}
+.danger{border-left-color:var(--danger);background:rgba(248,113,113,.11)}
+.expect{border-left-color:var(--ok);background:rgba(52,211,153,.11)}
+.note p:first-child,.warn p:first-child,.danger p:first-child,.expect p:first-child{margin-top:0}
+.note p:last-child,.warn p:last-child,.danger p:last-child,.expect p:last-child{margin-bottom:0}
+
+/* Pasos */
+ol.steps{padding-left:22px}
+ol.steps > li{margin:10px 0;padding-left:4px}
+ol.steps > li::marker{color:var(--accent);font-weight:700}
+.why{color:var(--muted);font-style:italic}
+
+/* Código y copiado */
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.87em;background:rgba(56,189,248,.13);padding:.1em .35em;border-radius:6px}
+pre{
+  margin:0;padding:14px;background:#060b16;color:#e2e8f0;border:1px solid var(--border);
+  border-radius:10px;overflow-x:auto;font-size:.8rem;line-height:1.55;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.copy-block{position:relative;margin:12px 0}
+.copy-block pre{padding-right:92px}
+.copy-btn{
+  position:absolute;top:8px;right:8px;background:#1e293b;color:#e2e8f0;
+  border:1px solid #334155;border-radius:8px;padding:6px 10px;font:inherit;
+  font-size:.74rem;cursor:pointer;
+}
+.copy-btn:hover,.copy-btn:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.copy-btn.ok{background:#065f46;border-color:#10b981;color:#d1fae5}
+
+/* Tablas */
+.table-wrap{overflow-x:auto;margin:12px 0;border:1px solid var(--border);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:560px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{background:var(--card2);font-size:.76rem;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}
+@media (max-width:640px){
+  .table-wrap{border:0;overflow:visible}
+  table{min-width:0}
+  thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  tbody tr{display:block;background:var(--card2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;padding:4px 2px}
+  tbody td{display:flex;gap:10px;border:0;padding:7px 10px;font-size:.86rem}
+  tbody td::before{content:attr(data-label);font-weight:600;color:var(--muted);flex:0 0 40%;font-size:.78rem}
+}
+
+/* Desplegables */
+details{
+  border:1px solid var(--border);border-radius:10px;background:var(--card2);
+  margin:10px 0;scroll-margin-top:72px;
+}
+summary{cursor:pointer;padding:12px 14px;font-weight:600;list-style:none;display:flex;gap:10px;align-items:flex-start}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"+";color:var(--accent);font-weight:700;flex:0 0 auto;width:1em}
+details[open] summary::before{content:"−"}
+details > :not(summary){margin-left:14px;margin-right:14px}
+details > :not(summary):last-child{margin-bottom:12px}
+details p{font-size:.92rem}
+
+/* Listas de comprobación */
+.check{
+  display:flex;gap:10px;align-items:flex-start;padding:10px 12px;
+  border:1px solid var(--border);border-radius:10px;margin:8px 0;
+  background:var(--card2);cursor:pointer;
+}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent);flex:0 0 auto}
+.check span{flex:1;font-size:.92rem}
+.check input:checked + span{color:var(--muted);text-decoration:line-through}
+
+/* Diagrama de flujo */
+.flow{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.flow-step{background:var(--card2);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:10px 14px;font-size:.9rem}
+.flow-arrow{text-align:center;color:var(--accent);font-size:1.1rem;line-height:1}
+
+/* SVG */
+.svg-hero{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin:0 0 16px;box-shadow:var(--shadow)}
+.svg-hero svg,.svg-hero img{display:block;width:100%;height:auto;border-radius:10px}
+.svg-controls{display:flex;justify-content:flex-end;margin-top:8px}
+.svg-controls .btn{min-height:36px;font-size:.76rem;padding:6px 10px}
+.svg-paused [data-svg-container] *{animation-play-state:paused !important}
+
+.svgFloat{animation:svgFloat 4.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.svgFloatB{animation:svgFloat 5.4s ease-in-out infinite .6s;transform-box:fill-box;transform-origin:center}
+.svgPulse{animation:svgPulse 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.svgDash{stroke-dasharray:5 7;animation:svgDash 2.4s linear infinite}
+@keyframes svgFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes svgPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+@keyframes svgDash{to{stroke-dashoffset:-48}}
+
+/* Resaltado de búsqueda */
+.flash{animation:flash 1.8s ease}
+@keyframes flash{0%,100%{box-shadow:var(--shadow)}25%{box-shadow:0 0 0 3px var(--accent)}}
+
+/* Créditos */
+.author{font-size:2.1rem;font-weight:800;line-height:1.15;color:var(--accent);letter-spacing:-.02em;margin:.3em 0 .1em}
+.author-role{color:var(--muted);font-size:.95rem;margin:0 0 .8em;text-transform:uppercase;letter-spacing:.08em}
+.version{font-size:.82rem;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;margin-top:14px}
+
+/* Botón arriba, modal, aviso */
+#toTop{
+  position:fixed;right:16px;bottom:16px;width:46px;height:46px;border-radius:50%;
+  background:var(--btn-bg);color:var(--btn-fg);border:0;font-size:1.15rem;
+  cursor:pointer;box-shadow:var(--shadow);z-index:70;
+}
+#toTop[hidden]{display:none}
+#toTop:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.modal{position:fixed;inset:0;background:rgba(2,6,23,.72);display:flex;align-items:center;justify-content:center;padding:16px;z-index:120}
+.modal[hidden]{display:none}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;max-width:560px;width:100%;box-shadow:var(--shadow)}
+.modal-box h3{margin-top:0}
+.modal-box textarea{
+  width:100%;height:160px;background:#060b16;color:#e2e8f0;border:1px solid var(--border);
+  border-radius:10px;padding:10px;font-family:ui-monospace,monospace;font-size:.78rem;resize:vertical;
+}
+.modal-actions{display:flex;justify-content:flex-end;margin-top:10px}
+body.modal-open{overflow:hidden}
+#toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);
+  background:var(--card);color:var(--text);border:1px solid var(--accent);
+  padding:10px 16px;border-radius:10px;box-shadow:var(--shadow);opacity:0;
+  pointer-events:none;transition:.25s;z-index:130;max-width:90vw;font-size:.85rem;text-align:center;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* Pie */
+footer{border-top:1px solid var(--border);padding:18px 16px 30px;text-align:center;color:var(--muted);font-size:.78rem}
+
+/* ============ IMPRESIÓN ============ */
+@media print{
+  @page{size:A4 portrait;margin:14mm 12mm}
+  html,body{background:#fff !important;color:#000 !important;font-size:10.5pt}
+  #progress,#toTop,.topbar,.tabbar,.copy-btn,.search-wrap,.svg-controls,.modal,#toast,.no-print,footer{display:none !important}
+  .tab-panel{display:block !important}
+  .tab-panel::before{
+    content:attr(data-title);display:block;font-size:16pt;font-weight:700;
+    margin:14px 0 8px;padding-bottom:4px;border-bottom:2px solid #000;
+  }
+  .card,.mini,.flow-step,.check,.expect,.note,.warn,.danger{
+    background:#fff !important;color:#000 !important;border:1px solid #b9b9b9 !important;
+    box-shadow:none !important;
+  }
+  .card{break-inside:auto;padding:8px 0;border:0 !important;border-bottom:1px solid #ddd !important;border-radius:0 !important;margin:0 0 10px !important}
+  h1,h2,h3,h4{color:#000 !important}
+  a{color:#000 !important;text-decoration:underline}
+  pre{background:#f4f4f4 !important;color:#000 !important;border:1px solid #999 !important;white-space:pre-wrap;word-break:break-word}
+  code{background:#eee !important;color:#000 !important}
+  .table-wrap{overflow:visible !important;border:1px solid #999 !important}
+  table{min-width:0 !important;font-size:9.5pt}
+  th,td{border:1px solid #999 !important;color:#000 !important;background:#fff !important}
+  tr{break-inside:avoid}
+  details{border:1px solid #bbb !important;background:#fff !important}
+  details > *{color:#000 !important}
+  .svg-hero{background:#fff !important;border:1px solid #bbb !important;box-shadow:none !important;break-inside:avoid}
+  .svgFloat,.svgFloatB,.svgPulse,.svgDash{animation:none !important}
+  .author{color:#000 !important;-webkit-text-fill-color:#000 !important}
+  input[type="checkbox"]{appearance:auto !important;-webkit-appearance:checkbox !important}
+  .check input:checked + span{text-decoration:line-through;color:#000 !important}
+  .print-only{display:block !important}
+}
+.print-only{display:none}
+</style>
+</head>
+<body>
+
+<div id="progress" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <strong>Catálogos estilo Instagram con Gemini</strong>
+      <small>Tutorial interactivo · V001 · 18/10/2026</small>
+    </div>
+    <div class="controls">
+      <div class="search-wrap">
+        <label class="sr-only" for="searchInput">Buscar en el tutorial</label>
+        <input id="searchInput" type="search" placeholder="Buscar en el tutorial…" autocomplete="off">
+        <div id="searchResults" class="search-results" hidden></div>
+      </div>
+      <button class="btn" id="btnFontDown" type="button" aria-label="Reducir tamaño de letra">A−</button>
+      <button class="btn" id="btnFontReset" type="button" aria-label="Restablecer tamaño de letra">100%</button>
+      <button class="btn" id="btnFontUp" type="button" aria-label="Aumentar tamaño de letra">A+</button>
+      <button class="btn" id="btnTheme" type="button">Tema claro</button>
+      <button class="btn" id="btnPrint" type="button">Imprimir / PDF</button>
+    </div>
+  </div>
+</header>
+
+<nav class="tabbar" aria-label="Secciones del tutorial">
+  <div class="tabbar-inner" role="tablist">
+    <button class="tab" role="tab" id="tab-inicio" data-tab="inicio" aria-controls="panel-inicio" aria-selected="true">Inicio</button>
+    <button class="tab" role="tab" id="tab-conceptos" data-tab="conceptos" aria-controls="panel-conceptos" aria-selected="false" tabindex="-1">Conceptos</button>
+    <button class="tab" role="tab" id="tab-procedimiento" data-tab="procedimiento" aria-controls="panel-procedimiento" aria-selected="false" tabindex="-1">Procedimiento</button>
+    <button class="tab" role="tab" id="tab-practica" data-tab="practica" aria-controls="panel-practica" aria-selected="false" tabindex="-1">Práctica</button>
+    <button class="tab" role="tab" id="tab-errores" data-tab="errores" aria-controls="panel-errores" aria-selected="false" tabindex="-1">Errores</button>
+    <button class="tab" role="tab" id="tab-resumen" data-tab="resumen" aria-controls="panel-resumen" aria-selected="false" tabindex="-1">Resumen</button>
+    <button class="tab" role="tab" id="tab-fuentes" data-tab="fuentes" aria-controls="panel-fuentes" aria-selected="false" tabindex="-1">Fuentes</button>
+    <button class="tab" role="tab" id="tab-creditos" data-tab="creditos" aria-controls="panel-creditos" aria-selected="false" tabindex="-1">Créditos</button>
+  </div>
+</nav>
+
+<noscript>
+  <style>.tab-panel{display:block !important}.tabbar,.controls{display:none !important}</style>
+  <p style="max-width:1100px;margin:16px auto;padding:0 16px;color:#fbbf24">
+    Activa JavaScript para usar las pestañas, el buscador, los botones de copiar y las listas de comprobación.
+    Todo el contenido del tutorial sigue siendo legible sin JavaScript.
+  </p>
+</noscript>
+
+<main id="main">
+
+<!-- ============================== INICIO ============================== -->
+<section class="tab-panel active" id="panel-inicio" data-title="Inicio" role="tabpanel" aria-labelledby="tab-inicio">
+
+  <div class="svg-hero" data-svg-container
+       data-alt="Ilustración animada: un teléfono móvil muestra un catálogo tipo Instagram con tarjetas de productos, un corazón de me gusta, una bolsa de pedidos y una burbuja de chat de WhatsApp."
+       role="img"
+       aria-label="Ilustración animada: un teléfono móvil muestra un catálogo tipo Instagram con tarjetas de productos, un corazón de me gusta, una bolsa de pedidos y una burbuja de chat de WhatsApp."></div>
+  <div class="svg-controls">
+    <button class="btn" id="btnSvgPause" type="button" aria-pressed="false">Pausar animación</button>
+  </div>
+
+  <h1>Catálogos estilo Instagram con Gemini</h1>
+  <p class="lead">Guía completa paso a paso desde cero. Vas a construir una aplicación web de catálogo y venta que se ve y se siente como un perfil de Instagram, usando herramientas gratuitas: Google Sheets, Google Apps Script, Google AI Studio y el modelo Gemini.</p>
+
+  <div class="card">
+    <h2>¿Qué vas a conseguir?</h2>
+    <div class="grid two">
+      <div class="mini">
+        <h3>Una web tipo Instagram</h3>
+        <p>Cabecera de perfil, feed en cuadrícula, tarjetas de producto, carrusel de fotos, botones de me gusta y comentarios.</p>
+      </div>
+      <div class="mini">
+        <h3>Venta directa por WhatsApp</h3>
+        <p>El cliente arma su pedido en una bolsa y al pulsar un botón se abre WhatsApp con el desglose de productos, cantidades y total.</p>
+      </div>
+      <div class="mini">
+        <h3>Catálogo exportable a PDF</h3>
+        <p>Un botón de descarga o impresión genera el catálogo completo en un documento listo para compartir.</p>
+      </div>
+      <div class="mini">
+        <h3>Panel de administración</h3>
+        <p>Gestionas productos, categorías, precios, fotos y ajustes de marca sin tocar una sola línea de código.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Cómo está organizado este tutorial</h2>
+    <p>El tutorial tiene ocho pestañas. No necesitas leerlas en orden estricto, pero si es tu primera vez te recomiendo seguir este recorrido:</p>
+    <ol>
+      <li><strong>Inicio</strong>: esta página. Te da el mapa general y los requisitos.</li>
+      <li><strong>Conceptos</strong>: qué es un backend, un frontend, una API, un prompt o una URL Exec. Léelo antes de empezar.</li>
+      <li><strong>Procedimiento</strong>: las cinco fases, paso a paso, con el resultado esperado de cada paso.</li>
+      <li><strong>Práctica</strong>: 20 ejercicios progresivos con solución, agrupados por nivel.</li>
+      <li><strong>Errores</strong>: tabla de problemas frecuentes y cómo resolverlos.</li>
+      <li><strong>Resumen</strong>: ideas clave, 21 preguntas frecuentes y glosario.</li>
+      <li><strong>Fuentes</strong>: de dónde sale el contenido y qué se ha podido verificar.</li>
+      <li><strong>Créditos</strong>: autoría, versión y fecha de creación.</li>
+    </ol>
+    <p class="note"><strong>Tu progreso se guarda.</strong> Las listas de comprobación, el tema, el tamaño de letra y la última pestaña visitada se conservan en tu propio navegador. Si abres el archivo en otro dispositivo, empezarás de cero.</p>
+  </div>
+
+  <div class="card">
+    <h2>La ruta en cinco fases</h2>
+    <div class="flow">
+      <div class="flow-step"><strong>Fase 1 · Inspiración visual.</strong> Eliges un diseño en Pinterest y preparas la carpeta y la hoja de cálculo en Google Drive.</div>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
+      <div class="flow-step"><strong>Fase 2 · Backend.</strong> Gemini escribe el código de Google Apps Script, lo pegas en tu hoja y lo publicas como aplicación web con acceso «Cualquiera».</div>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
+      <div class="flow-step"><strong>Fase 3 · Frontend.</strong> En Google AI Studio entregas el Prompt N.º 2, la URL Exec y la imagen de inspiración. Gemini compila la interfaz.</div>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
+      <div class="flow-step"><strong>Fase 4 · Administración.</strong> Registras el primer usuario, configuras la identidad visual y cargas categorías y productos.</div>
+      <div class="flow-arrow" aria-hidden="true">↓</div>
+      <div class="flow-step"><strong>Fase 5 · Publicación.</strong> Publicas el catálogo en el subdominio gratuito de AI Studio o lo despliegas en GitHub + Netlify/Vercel.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Requisitos previos</h2>
+    <ul>
+      <li>Una <strong>cuenta de Google</strong> (te sirve la de Gmail).</li>
+      <li>Un <strong>navegador actualizado</strong> en ordenador: Chrome, Edge, Firefox o Safari recientes. En móvil también funciona, pero algunas pantallas de Apps Script son incómodas en teléfono.</li>
+      <li>Una <strong>imagen de inspiración</strong> descargada o copiada de Pinterest.</li>
+      <li>Un <strong>número de WhatsApp</strong> con código de país, por ejemplo <code>+5215512345678</code>.</li>
+      <li>Entre <strong>1 y 2 horas</strong> para la primera puesta en marcha. La compilación del frontend en AI Studio puede tardar entre 10 y 15 minutos según la fuente.</li>
+    </ul>
+    <p><strong>No necesitas</strong> saber programar, ni pagar hosting, ni contratar un dominio. Todo el flujo descrito se apoya en capas gratuitas de servicios de Google.</p>
+  </div>
+
+  <div class="card">
+    <h2>Aviso de verificación</h2>
+    <p class="warn">Este tutorial se basa en el material documentado del vídeo de <strong>FER PAUL</strong> titulado <em>«CREA CATÁLOGOS estilo INSTAGRAM con GEMINI 4 + Google Sheets ¡GRATIS!»</em>. Algunos detalles pueden variar con el tiempo:</p>
+    <ul>
+      <li>La fuente menciona el modelo <strong>Gemini 3.8 Flash</strong>. Si tu interfaz de Google AI Studio no muestra ese nombre exacto, elige el modelo multimodal disponible que permita adjuntar imágenes y generar aplicaciones web.</li>
+      <li>Los nombres de botones y menús de Google AI Studio, Sheets y Apps Script cambian con las actualizaciones. Si no encuentras una opción, busca el equivalente más cercano.</li>
+      <li>Los límites de las capas gratuitas de Google pueden cambiar. El tutorial reproduce lo que indica la fuente: coste cero para un catálogo pequeño o mediano.</li>
+    </ul>
+    <p>En la pestaña <strong>Fuentes</strong> tienes el detalle de lo que se ha podido comprobar y lo que queda pendiente de verificación en tu entorno.</p>
+  </div>
+
+</section>
+
+<!-- ============================== CONCEPTOS ============================== -->
+<section class="tab-panel" id="panel-conceptos" data-title="Conceptos" role="tabpanel" aria-labelledby="tab-conceptos" hidden>
+
+  <h1>Conceptos fundamentales y arquitectura</h1>
+  <p class="lead">Antes de tocar ninguna herramienta, entiende qué piezas forman el sistema. No hace falta memorizar nada: vuelve a esta pestaña cada vez que un término te bloquee.</p>
+
+  <article class="card" id="con-que-es">
+    <h2>¿Qué es un catálogo estilo Instagram?</h2>
+    <p>Un <strong>catálogo estilo Instagram</strong> es una aplicación web interactiva que presenta tus productos o servicios con el formato visual, dinámico y atractivo de la red social Instagram: cabecera de perfil, feed en cuadrícula o tarjetas, carrusel de fotografías, botones de «me gusta» y comentarios.</p>
+    <p>Pero además incorpora funciones de comercio:</p>
+    <ul>
+      <li>una <strong>bolsa de pedidos</strong> (carrito de compras);</li>
+      <li>envío del pedido estructurado a <strong>WhatsApp</strong>;</li>
+      <li>exportación del catálogo completo a <strong>PDF</strong>.</li>
+    </ul>
+    <p>Construirlo «con Gemini» significa que no vas a escribir código manualmente. La inteligencia artificial redacta tanto la lógica del servidor (backend) como el diseño de la interfaz visual (frontend) a partir de <strong>prompts</strong> e imágenes de ejemplo.</p>
+    <p class="note"><strong>Idea clave:</strong> tú aportas las decisiones (qué vender, qué diseño te gusta, qué datos hay en la hoja) y la IA aporta el código. Tú copias, pegas y verificas.</p>
+  </article>
+
+  <article class="card" id="con-para-que">
+    <h2>¿Para qué sirve y por qué es importante?</h2>
+    <p>Las páginas web tradicionales de comercio electrónico resultan frías, complejas y costosas de mantener. Vender únicamente por Instagram implica responder mensajes uno a uno, enviar listas desactualizadas y perder ventas por falta de inmediatez.</p>
+    <p>Este sistema resuelve ambos problemas:</p>
+    <ul>
+      <li><strong>Cero coste de desarrollo y mantenimiento:</strong> no requiere servidores, hosting, dominios ni programadores, según la fuente.</li>
+      <li><strong>Experiencia familiar para el cliente:</strong> navega por una interfaz parecida a Instagram, lo que genera confianza e inmediatez.</li>
+      <li><strong>Gestión sencilla desde Google Sheets:</strong> actualizas precios, nombres, promociones y fotos desde la hoja de cálculo, incluso desde el teléfono.</li>
+      <li><strong>Conversión directa por WhatsApp:</strong> el cliente arma el pedido en la web y al hacer clic se abre su WhatsApp con el desglose exacto de productos, cantidades y total.</li>
+    </ul>
+  </article>
+
+  <article class="card" id="con-usos">
+    <h2>Aplicaciones y situaciones reales de uso</h2>
+    <div class="grid two">
+      <div class="mini">
+        <h3>Restaurantes, cafeterías y repostería</h3>
+        <p>Menú digital interactivo con fotos atractivas de platillos, carruseles para mostrar ingredientes y pedidos directos a cocina por WhatsApp.</p>
+      </div>
+      <div class="mini">
+        <h3>Tiendas de moda, ropa y calzado</h3>
+        <p>Muestrario tipo perfil de Instagram con etiquetas de oferta, tallas, colores y fotos desde distintos ángulos.</p>
+      </div>
+      <div class="mini">
+        <h3>Artesanías, joyería y regalos</h3>
+        <p>Muestrario de piezas únicas con botones de «me gusta» para medir popularidad antes de producir en masa.</p>
+      </div>
+      <div class="mini">
+        <h3>Servicios profesionales</h3>
+        <p>Estética, consultoría o cursos: catálogo visual con descripción detallada, precios y enlace de reserva por chat.</p>
+      </div>
+    </div>
+  </article>
+
+  <article class="card" id="con-componentes">
+    <h2>Los tres componentes del sistema</h2>
+    <p>Para construir este catálogo sin programar vas a unir tres piezas gratuitas que se comunican entre sí:</p>
+    <ol class="steps">
+      <li><strong>El Backend (el cerebro y la base de datos).</strong> Es la parte invisible que guarda la información. Usarás <strong>Google Sheets</strong> como base de datos (precios, títulos, fotos) y <strong>Google Apps Script</strong> (un entorno de código de servidor gratuito de Google) para enviar esa información a la web.</li>
+      <li><strong>El Frontend (la cara visible).</strong> Es la página web interactiva que ve tu cliente. Se diseña y genera en <strong>Google AI Studio</strong> combinando el Prompt N.º 2 y una imagen de inspiración.</li>
+      <li><strong>El Conector (URL Exec / API).</strong> Es una dirección web especial que conecta el backend con el frontend: cuando cambias un precio en la hoja, la web lo refleja al actualizar.</li>
+    </ol>
+  </article>
+
+  <article class="card" id="con-terminos">
+    <h2>Términos técnicos clave, explicados sin jerga</h2>
+    <ul>
+      <li><strong>Prompt:</strong> instrucción escrita en lenguaje cotidiano que le das a la IA para que realice una tarea técnica.</li>
+      <li><strong>API (Interfaz de Programación de Aplicaciones):</strong> el «puente» que permite que la página web lea los datos guardados en tu Google Sheets.</li>
+      <li><strong>URL Exec:</strong> la dirección web única generada por Google Apps Script al publicar tu backend. Debe terminar en <code>/exec</code>.</li>
+      <li><strong>Seguridad Hash:</strong> método para resguardar contraseñas transformándolas en una cadena protegida de texto, de modo que nadie pueda leer las claves originales en la hoja de cálculo.</li>
+      <li><strong>No-Code / Low-Code:</strong> metodología de creación de software que minimiza o elimina la necesidad de escribir código manualmente.</li>
+      <li><strong>Responsive:</strong> diseño web adaptable que se ajusta a la pantalla de cualquier dispositivo, incluido el móvil.</li>
+      <li><strong>Backend y Frontend:</strong> el backend es la parte que guarda y procesa datos; el frontend es lo que el usuario ve y toca.</li>
+    </ul>
+  </article>
+
+  <article class="card" id="con-comparativa">
+    <h2>Tabla comparativa de arquitectura</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Característica</th>
+            <th scope="col">Tienda online tradicional</th>
+            <th scope="col">Venta directa en Instagram</th>
+            <th scope="col">Catálogo Gemini + Google Sheets</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Característica">Costo mensual</td>
+            <td data-label="Tienda tradicional">29–100 USD/mes</td>
+            <td data-label="Venta en Instagram">Gratis</td>
+            <td data-label="Catálogo Gemini">0 USD (100 % gratuito, según la fuente)</td>
+          </tr>
+          <tr>
+            <td data-label="Característica">Dificultad técnica</td>
+            <td data-label="Tienda tradicional">Alta (requiere configuración)</td>
+            <td data-label="Venta en Instagram">Nula</td>
+            <td data-label="Catálogo Gemini">Baja (guiada por IA)</td>
+          </tr>
+          <tr>
+            <td data-label="Característica">Base de datos</td>
+            <td data-label="Tienda tradicional">Compleja (SQL/servidor)</td>
+            <td data-label="Venta en Instagram">No tiene</td>
+            <td data-label="Catálogo Gemini">Google Sheets (fácil de usar)</td>
+          </tr>
+          <tr>
+            <td data-label="Característica">Cierre de venta</td>
+            <td data-label="Tienda tradicional">Pasarela de pago (comisiones)</td>
+            <td data-label="Venta en Instagram">Chat manual lento</td>
+            <td data-label="Catálogo Gemini">Mensaje directo a WhatsApp</td>
+          </tr>
+          <tr>
+            <td data-label="Característica">Catálogo PDF</td>
+            <td data-label="Tienda tradicional">Requiere plugin adicional</td>
+            <td data-label="Venta en Instagram">No disponible</td>
+            <td data-label="Catálogo Gemini">Exportación en un clic</td>
+          </tr>
+          <tr>
+            <td data-label="Característica">Personalización visual</td>
+            <td data-label="Tienda tradicional">Limitada a plantillas</td>
+            <td data-label="Venta en Instagram">Fija por la plataforma</td>
+            <td data-label="Catálogo Gemini">Total (vía prompt + Pinterest)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card" id="con-ejemplos">
+    <h2>Ejemplo correcto y ejemplo incorrecto</h2>
+    <p class="expect"><strong>Ejemplo CORRECTO:</strong> configurar Google Sheets con las pestañas «Productos», «Categorías», «Usuarios» y «Ajustes», vinculadas mediante un Apps Script publicado con acceso «Cualquiera».</p>
+    <p class="danger"><strong>Ejemplo INCORRECTO:</strong> intentar conectar Google AI Studio directamente a una hoja de Sheets privada sin publicar el Apps Script como aplicación web con URL Exec. La web no cargará los datos.</p>
+    <p>La diferencia entre ambos casos es una sola decisión: el permiso de acceso de la implementación de Apps Script. Si lo dejas en «Solo yo», tu catálogo funcionará únicamente cuando tú estés conectado con tu cuenta de Google.</p>
+  </article>
+
+  <article class="card" id="con-resumen">
+    <h2>Resumen de la pestaña</h2>
+    <p>Un catálogo estilo Instagram combina tres piezas: una base de datos sencilla (Google Sheets), un servidor gratuito que la expone como API (Google Apps Script) y una interfaz generada por IA (Google AI Studio + Gemini). El pegamento entre las piezas es la URL Exec. Si entiendes esas cuatro ideas, estás listo para el procedimiento.</p>
+  </article>
+
+</section>
+
+<!-- ============================== PROCEDIMIENTO ============================== -->
+<section class="tab-panel" id="panel-procedimiento" data-title="Procedimiento" role="tabpanel" aria-labelledby="tab-procedimiento" hidden>
+
+  <h1>Procedimiento completo, fase a fase</h1>
+  <p class="lead">Cada paso indica una única acción principal, el motivo por el que se hace y el resultado que deberías ver. Si algo no coincide, consulta la pestaña <strong>Errores</strong>.</p>
+
+  <article class="card" id="proc-fase1-pinterest">
+    <h2>Fase 1 · Paso 1: elige un diseño de referencia en Pinterest</h2>
+    <p><strong>Objetivo:</strong> conseguir una imagen que Gemini pueda imitar en estructura, colores y disposición de tarjetas.</p>
+    <p>Gemini es multimodal: no solo lee texto, también analiza imágenes. Al entregarle una captura de un diseño que te guste, imitará su estructura de colores, la disposición de las tarjetas y la estética general.</p>
+    <ol class="steps">
+      <li><strong>Ingresa a Pinterest.</strong> Abre Pinterest en el navegador y asegúrate de haber iniciado sesión o de poder navegar por la búsqueda pública. <span class="why">Pinterest es la fuente de inspiración visual del flujo de trabajo descrito.</span></li>
+      <li><strong>Busca referencias.</strong> En la barra de búsqueda escribe términos como <code>ui instagram profile shop design</code>, <code>app catalog layout</code> o <code>grid product card ui</code>. <span class="why">Los términos en inglés devuelven más resultados de diseño de interfaz.</span></li>
+      <li><strong>Selecciona un diseño con la estructura que deseas:</strong> fotos cuadradas, botones redondeados, cabecera limpia con foto de perfil. <span class="why">Cuanto más clara sea la referencia, más fiel será el resultado generado.</span></li>
+      <li><strong>Copia o descarga la imagen.</strong> Haz clic derecho sobre la imagen elegida y selecciona «Copiar imagen», o descárgala en formato JPG/PNG. <span class="why">La imagen se adjuntará al prompt del frontend.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> tienes una imagen de referencia en el portapapeles o un archivo JPG/PNG en tu equipo.</p>
+    <p><strong>Si algo falla:</strong> si el clic derecho está deshabilitado, usa una captura de pantalla del diseño. Si la imagen pesa más de 2 MB, recórtala o redúcela antes de usarla: la compilación en AI Studio puede ralentizarse.</p>
+    <p><strong>Resumen del paso:</strong> una buena imagen de referencia ahorra decenas de instrucciones de texto.</p>
+  </article>
+
+  <article class="card" id="proc-fase1-drive">
+    <h2>Fase 1 · Paso 2: prepara la carpeta y la hoja de cálculo</h2>
+    <p><strong>Objetivo:</strong> tener un lugar único donde vivirán la base de datos y, más adelante, las fotos de los productos.</p>
+    <ol class="steps">
+      <li><strong>Entra a Google Drive</strong> con tu cuenta de Google. <span class="why">Drive es el almacenamiento donde se guardarán la hoja y las imágenes.</span></li>
+      <li><strong>Crea una carpeta nueva.</strong> Haz clic en «Nuevo» &gt; «Carpeta nueva» y nómbrala <code>Catálogos Studio AI</code>. <span class="why">Mantener todo junto facilita encontrar los archivos y otorgar permisos.</span></li>
+      <li><strong>Entra en la carpeta creada.</strong> Haz clic en «Nuevo» &gt; «Hoja de cálculo de Google» y nómbrala <code>Base_de_Datos_Catálogo</code>. <span class="why">Esta hoja será la base de datos real del catálogo.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> dentro de la carpeta <code>Catálogos Studio AI</code> tienes una hoja de cálculo llamada <code>Base_de_Datos_Catálogo</code>, abierta o accesible desde Drive.</p>
+    <p><strong>Si algo falla:</strong> si no ves la opción «Hoja de cálculo de Google», comprueba que estás dentro de la carpeta y no en la vista general de Drive.</p>
+  </article>
+
+  <article class="card" id="proc-prompt1">
+    <h2>Fase 2 · Paso 1: obtén el código del backend con Gemini (Prompt N.º 1)</h2>
+    <p><strong>Objetivo:</strong> conseguir un bloque de código completo para Google Apps Script, adaptado a tu tipo de negocio.</p>
+    <ol class="steps">
+      <li><strong>Abre Gemini o Google AI Studio.</strong> <span class="why">Ambos permiten conversar con el modelo y copiar el código generado.</span></li>
+      <li><strong>Copia la plantilla del Prompt N.º 1</strong> que tienes más abajo. <span class="why">La plantilla concentra los requisitos que el backend debe cumplir.</span></li>
+      <li><strong>Rellena el campo personalizable con tu tipo de negocio</strong>: por ejemplo <code>comida para restaurante</code>, <code>tienda de ropa femenina</code> o <code>repostería artesanal</code>. <span class="why">El modelo adapta nombres de campos y ejemplos a tu nicho.</span></li>
+      <li><strong>Envía el prompt.</strong> Gemini procesará la solicitud y te entregará un bloque de código para Apps Script. <span class="why">Ese bloque es el que pegarás en la hoja de cálculo.</span></li>
+      <li><strong>Pulsa «Copiar código»</strong> en el bloque generado. <span class="why">Copiar desde el botón evita arrastrar formato o cortar líneas.</span></li>
+    </ol>
+
+    <div class="copy-block">
+      <pre>Actúa como desarrollador experto en Google Apps Script.
+Crea el backend completo para un catálogo de [TIPO DE NEGOCIO] gestionado desde una hoja de Google Sheets.
+
+Requisitos:
+1. Una función doGet(e) que devuelva los datos en formato JSON mediante ContentService.
+2. Una función inicializarBaseDeDatos() que cree, si no existen, las hojas:
+   - Productos: ID, Nombre, Descripción, Precio Regular, Precio Promo, Categoría, Foto PNG, Carrusel, Destacado, Etiqueta Promo y Validez.
+   - Categorías: nombre e imagen representativa.
+   - Usuarios: credenciales con contraseña protegida mediante hash.
+   - Ajustes: nombre del negocio, biografía, teléfono de WhatsApp, logo, portada, colores y tipografía.
+3. Funciones para crear, leer, actualizar y eliminar productos y categorías.
+4. Almacenamiento de imágenes en Google Drive con permiso de lectura pública.
+5. Validación y saneamiento de todas las entradas de texto.
+6. Devolución de errores controlados en formato JSON.
+
+Entrega el código completo, comentado y listo para pegar en el editor de Apps Script.</pre>
+    </div>
+
+    <p class="warn"><strong>Nota de fidelidad:</strong> la fuente no reproduce el texto literal íntegro del Prompt N.º 1. Esta plantilla se deriva de los requisitos que el documento atribuye a ese prompt (hojas «Productos», «Categorías», «Usuarios» y «Ajustes», función <code>doGet</code>, inicialización de la base de datos y publicación como aplicación web). Si tu versión de Gemini devuelve código incompleto, pídele explícitamente que lo entregue entero y sin fragmentos.</p>
+
+    <p class="expect"><strong>Resultado esperado:</strong> tienes en el portapapeles un bloque de código JavaScript para Apps Script.</p>
+    <p><strong>Resumen del paso:</strong> el prompt correcto describe la estructura de datos y las funciones; no hace falta que tú sepas programarlas.</p>
+  </article>
+
+  <article class="card" id="proc-appsscript">
+    <h2>Fase 2 · Paso 2: instala el código en Google Apps Script</h2>
+    <p><strong>Objetivo:</strong> pegar el código generado dentro del editor que está vinculado a tu hoja de cálculo.</p>
+    <ol class="steps">
+      <li><strong>Abre tu hoja <code>Base_de_Datos_Catálogo</code></strong> en Google Sheets. <span class="why">Apps Script debe abrirse desde la hoja para quedar vinculado a ella.</span></li>
+      <li><strong>Ve a «Extensiones» &gt; «Apps Script».</strong> <span class="why">Se abrirá el editor de código asociado a esta hoja.</span></li>
+      <li><strong>Borra todo el código por defecto</strong> que aparece, normalmente <code>function myFunction() { ... }</code>. <span class="why">Si dejas ese código, el proyecto tendrá funciones que no necesitas.</span></li>
+      <li><strong>Pega el código completo que copiaste de Gemini.</strong> <span class="why">Es la lógica del backend y las funciones de inicialización.</span></li>
+      <li><strong>Guarda el proyecto</strong> con el icono del disco en la barra superior del editor. <span class="why">Los cambios no se ejecutan si no se guardan.</span></li>
+    </ol>
+    <p>La fuente muestra este fragmento como ejemplo parcial del código que genera Gemini. <strong>No lo uses solo:</strong> es una muestra, no el backend completo.</p>
+    <div class="copy-block">
+      <pre>function doGet(e) {
+  return ContentService.createTextOutput(JSON.stringify(obtenerDatos()))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function inicializarBaseDeDatos() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  crearHojaSiNoExiste(ss, "Productos");
+  crearHojaSiNoExiste(ss, "Categorías");
+  crearHojaSiNoExiste(ss, "Usuarios");
+  crearHojaSiNoExiste(ss, "Ajustes");
+}</pre>
+    </div>
+    <p class="expect"><strong>Resultado esperado:</strong> el editor muestra tu código guardado, sin errores de sintaxis visibles y con un nombre de proyecto propio.</p>
+    <p><strong>Si algo falla:</strong> si al guardar aparece un error de sintaxis, es probable que el copiado se haya cortado. Vuelve a copiar desde el botón del bloque de Gemini y reemplaza todo el contenido del editor.</p>
+  </article>
+
+  <article class="card" id="proc-inicializar">
+    <h2>Fase 2 · Paso 3: crea las tablas automáticamente</h2>
+    <p><strong>Objetivo:</strong> que la hoja de cálculo se rellene sola con las pestañas y columnas necesarias.</p>
+    <ol class="steps">
+      <li><strong>En la barra superior de Apps Script, abre el menú de funciones</strong> junto a «Depurar». <span class="why">Ahí se elige qué función ejecutar.</span></li>
+      <li><strong>Selecciona <code>inicializarBaseDeDatos</code></strong> (o el nombre de la función de configuración inicial que haya generado Gemini). <span class="why">Es la función que crea las pestañas y encabezados.</span></li>
+      <li><strong>Haz clic en «Ejecutar».</strong> <span class="why">Se iniciará el proceso de creación de la estructura.</span></li>
+      <li><strong>Autoriza los permisos.</strong> Aparecerá una ventana de seguridad: pulsa «Revisar permisos», elige tu cuenta de Google, entra en «Configuración avanzada» (en letras pequeñas abajo), pulsa «Ir a Proyecto sin título (no seguro)» y finalmente «Permitir». <span class="why">Google pide confirmación porque el script accede a tus hojas y a tu Drive.</span></li>
+      <li><strong>Vuelve a la hoja de cálculo</strong> y comprueba las pestañas creadas. <span class="why">Así verificas que la inicialización terminó correctamente.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> la hoja contiene estas cuatro pestañas con sus columnas:</p>
+    <ul>
+      <li><strong>Productos:</strong> ID, Nombre, Descripción, Precio Regular, Precio Promo, Categoría, Foto PNG, Carrusel, Destacado, Etiqueta Promo y Validez.</li>
+      <li><strong>Categorías:</strong> para organizar tus secciones (bebidas, platos fuertes, postres…).</li>
+      <li><strong>Usuarios:</strong> para gestionar el acceso administrativo con credenciales protegidas.</li>
+      <li><strong>Ajustes:</strong> nombre del negocio, biografía, teléfono de WhatsApp, logo, foto de portada, colores y tipografía.</li>
+    </ul>
+    <p class="danger"><strong>No borres ni reordenes las columnas generadas.</strong> Alterar los encabezados rompe la conexión con la API y la web dejará de mostrar los datos correctamente.</p>
+    <p><strong>Si algo falla:</strong> si no aparecen las pestañas, vuelve a ejecutar la función y revisa que hayas autorizado los permisos. Si ves un error de función no encontrada, el código pegado está incompleto.</p>
+  </article>
+
+  <article class="card" id="proc-publicar-backend">
+    <h2>Fase 2 · Paso 4: publica el backend y copia la URL Exec</h2>
+    <p><strong>Objetivo:</strong> convertir tu hoja de cálculo en una API accesible desde la web.</p>
+    <ol class="steps">
+      <li><strong>En la esquina superior derecha del editor de Apps Script, pulsa «Implementar» &gt; «Nueva implementación».</strong> <span class="why">La implementación es lo que publica el script como servicio web.</span></li>
+      <li><strong>Pulsa el icono de engranaje junto a «Seleccionar tipo» y elige «Aplicación web».</strong> <span class="why">Necesitamos una URL pública, no una ejecución manual.</span></li>
+      <li><strong>Rellena los campos:</strong> descripción <code>Backend API Catálogo v1</code>; «Ejecutar como»: <code>Yo (tu correo de Google)</code>; «Quién tiene acceso»: <strong><code>Cualquiera</code></strong>. <span class="why">Si eliges «Solo yo», la página web no podrá leer los productos.</span></li>
+      <li><strong>Pulsa «Implementar».</strong> <span class="why">Google generará la dirección del servicio.</span></li>
+      <li><strong>Concede los permisos de autorización de nuevo si el sistema lo solicita.</strong> <span class="why">La publicación requiere confirmar el acceso por segunda vez en algunos casos.</span></li>
+      <li><strong>Copia la URL de la aplicación web</strong> (debe terminar en <code>/exec</code>) y guárdala en un bloc de notas. <span class="why">La necesitarás en el prompt del frontend.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> tienes una URL parecida a <code>https://script.google.com/macros/s/XXXXXXXX/exec</code>. Si la pegas en una pestaña nueva del navegador, debería devolver una respuesta en formato JSON.</p>
+    <p class="danger"><strong>El paso más crítico de todo el tutorial:</strong> el acceso debe ser «Cualquiera». Es la causa número uno de catálogos que cargan vacíos.</p>
+  </article>
+
+  <article class="card" id="proc-aistudio">
+    <h2>Fase 3 · Paso 1: prepara Google AI Studio</h2>
+    <p><strong>Objetivo:</strong> abrir un espacio de trabajo donde generar la interfaz.</p>
+    <ol class="steps">
+      <li><strong>Ingresa a Google AI Studio</strong> en <code>aistudio.google.com</code>. <span class="why">Es el entorno donde se genera y compila el frontend.</span></li>
+      <li><strong>Inicia sesión con tu cuenta de Google</strong> y pulsa «Get Started». <span class="why">El acceso requiere una cuenta de Google activa.</span></li>
+      <li><strong>Abre un nuevo espacio de trabajo</strong> («Create New Prompt»). <span class="why">Cada espacio conserva su propio prompt e imagen adjunta.</span></li>
+      <li><strong>Selecciona un modelo con capacidad de razonamiento visual</strong>, por ejemplo el que la fuente llama <strong>Gemini 3.8 Flash</strong> o la versión equivalente disponible en tu interfaz. <span class="why">Necesitas un modelo que entienda la imagen de referencia y genere código web.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> ves la caja de texto del prompt, el selector de modelo y el botón para ejecutar.</p>
+  </article>
+
+  <article class="card" id="proc-prompt2">
+    <h2>Fase 3 · Paso 2: inserta la URL Exec y la imagen de inspiración (Prompt N.º 2)</h2>
+    <p><strong>Objetivo:</strong> dar al modelo el diseño visual y la dirección de los datos.</p>
+    <ol class="steps">
+      <li><strong>Copia la plantilla del Prompt N.º 2.</strong> <span class="why">Contiene la descripción funcional que debe cumplir la aplicación.</span></li>
+      <li><strong>Pega el prompt en la caja de texto de Google AI Studio.</strong> <span class="why">El prompt es la instrucción principal del proyecto.</span></li>
+      <li><strong>Sustituye el marcador <code>PEGA_AQUI_TU_URL_EXEC</code> por tu URL de backend terminada en <code>/exec</code>.</strong> <span class="why">Sin la URL, la interfaz no sabrá de dónde leer los productos.</span></li>
+      <li><strong>Adjunta la imagen de inspiración</strong> pegándola con <code>Ctrl + V</code> o usando el botón de adjuntar imagen. <span class="why">El modelo imitará la estructura visual de la referencia.</span></li>
+      <li><strong>Pulsa «Run» / «Create».</strong> <span class="why">Comenzará el proceso de compilación de la aplicación.</span></li>
+    </ol>
+
+    <div class="copy-block">
+      <pre>Crea una aplicación web dinámica responsive estilo Instagram basada en la imagen adjunta.
+Conéctala a la URL Exec de la API backend configurada en Apps Script:
+PEGA_AQUI_TU_URL_EXEC
+Incluye vista de feed en cuadrícula, tarjetas detalladas, carrusel de fotos, carrito de compras
+con pedido directo a WhatsApp, exportador a PDF y panel de administración.</pre>
+    </div>
+
+    <p class="note">Esta es la estructura del Prompt N.º 2 tal como aparece descrita en la fuente. Puedes añadir detalles de tu negocio (colores, tipografía, categorías) siempre que no elimines las funciones esenciales.</p>
+    <p class="expect"><strong>Resultado esperado:</strong> el modelo comienza a procesar la solicitud. La fuente indica que la compilación suele tardar entre 10 y 15 minutos.</p>
+    <p><strong>Si algo falla:</strong> si la compilación se detiene, reduce el tamaño de la imagen de referencia (máximo 2 MB) y simplifica el prompt inicial.</p>
+  </article>
+
+  <article class="card" id="proc-compilacion">
+    <h2>Fase 3 · Paso 3: revisa la aplicación generada</h2>
+    <p><strong>Objetivo:</strong> comprobar que la interfaz incluye todo lo prometido antes de cargar datos reales.</p>
+    <p>Al finalizar, verás una vista previa en vivo del catálogo. Comprueba que aparecen estos componentes:</p>
+    <ul>
+      <li><strong>Cabecera de perfil:</strong> foto de perfil, nombre del negocio, biografía y botones de interacción.</li>
+      <li><strong>Feed en cuadrícula y tarjetas:</strong> muestrario de productos con precio, foto principal y etiquetas de oferta.</li>
+      <li><strong>Modal de detalle:</strong> al hacer clic en un producto se abre una ventana con carrusel de imágenes, descripción completa, me gusta y comentarios.</li>
+      <li><strong>Bolsa de pedidos (carrito):</strong> contador flotante que acumula selecciones y calcula el total.</li>
+      <li><strong>Botón de WhatsApp:</strong> envía la lista formateada del pedido al número configurado.</li>
+      <li><strong>Exportador a PDF:</strong> botón de descarga o impresión del catálogo estructurado.</li>
+      <li><strong>Panel de administración:</strong> inicio de sesión administrativo para gestionar productos sin tocar código.</li>
+    </ul>
+    <p class="expect"><strong>Resultado esperado:</strong> todos los componentes anteriores están presentes y responden a los clics.</p>
+    <p><strong>Si algo falla:</strong> si falta alguno, pide una corrección en el mismo espacio de AI Studio indicando exactamente qué componente falta. Si la web aparece vacía, revisa la URL Exec y el permiso «Cualquiera».</p>
+  </article>
+
+  <article class="card" id="proc-admin">
+    <h2>Fase 4 · Paso 1: primer acceso al panel de administración</h2>
+    <p><strong>Objetivo:</strong> crear el usuario administrador que gestionará la tienda.</p>
+    <ol class="steps">
+      <li><strong>En tu catálogo generado, pulsa «Administrar»</strong> o navega a la sección de inicio de sesión. <span class="why">El panel es donde se cargan los productos y ajustes.</span></li>
+      <li><strong>Registra el primer usuario.</strong> Como la tabla «Usuarios» está vacía, el sistema te pedirá nombre, correo y contraseña segura. <span class="why">El primer usuario es el administrador.</span></li>
+      <li><strong>Pulsa «Registrar Usuario».</strong> <span class="why">Se guardarán las credenciales en la hoja de cálculo.</span></li>
+      <li><strong>Revisa la pestaña «Usuarios» en Google Sheets.</strong> Verás que la contraseña aparece resguardada mediante hash, no en texto legible. <span class="why">Esto confirma que la protección está funcionando.</span></li>
+    </ol>
+    <p class="danger"><strong>No olvides tus credenciales de administración.</strong> Recuperarlas puede requerir reiniciar la tabla de Usuarios desde Apps Script.</p>
+  </article>
+
+  <article class="card" id="proc-ajustes">
+    <h2>Fase 4 · Paso 2: personaliza la identidad visual</h2>
+    <p><strong>Objetivo:</strong> que el catálogo tenga la apariencia de tu marca.</p>
+    <p>Dentro del panel de administración, ve a la pestaña <strong>Ajustes</strong> y completa:</p>
+    <ul>
+      <li><strong>Nombre del negocio:</strong> la marca de tu empresa.</li>
+      <li><strong>Biografía:</strong> descripción corta estilo Instagram, por ejemplo <code>comida artesanal | envío a domicilio | pedidos aquí</code>.</li>
+      <li><strong>Logotipo y portada:</strong> imágenes principales; se guardan automáticamente en tu Google Drive.</li>
+      <li><strong>Tipografía:</strong> fuentes modernas como <strong>Poppins</strong> o <strong>Space Grotesk</strong>, según la fuente.</li>
+      <li><strong>Colores de marca:</strong> define el color primario (por ejemplo, rosa Instagram o dorado).</li>
+      <li><strong>Número de WhatsApp:</strong> con código de país, sin guiones ni espacios.</li>
+    </ul>
+    <p>Pulsa <strong>«Guardar Ajustes»</strong> al terminar. <span class="why">Los cambios se escriben en la pestaña «Ajustes» de la hoja.</span></p>
+    <p class="expect"><strong>Resultado esperado:</strong> la cabecera del catálogo muestra el nombre, la biografía, el logo y los colores elegidos.</p>
+  </article>
+
+  <article class="card" id="proc-productos">
+    <h2>Fase 4 · Paso 3: carga categorías y productos</h2>
+    <p><strong>Objetivo:</strong> llenar el catálogo con contenido real.</p>
+    <h3>Crear categorías</h3>
+    <ol class="steps">
+      <li><strong>Ve a «Categorías» &gt; «Nueva Categoría».</strong> <span class="why">Las categorías organizan el feed y los filtros.</span></li>
+      <li><strong>Agrega nombres como</strong> <code>Platos Fuertes</code>, <code>Bebidas</code> o <code>Postres</code>. <span class="why">Nombres claros facilitan la navegación del cliente.</span></li>
+      <li><strong>Sube una imagen representativa para cada categoría.</strong> <span class="why">La portada de categoría mejora la experiencia visual.</span></li>
+    </ol>
+    <h3>Cargar productos</h3>
+    <ol class="steps">
+      <li><strong>Ve a «Productos» &gt; «Nuevo Producto».</strong> <span class="why">Aquí se rellena la ficha que verá el cliente.</span></li>
+      <li><strong>Completa el formulario:</strong> nombre, precio regular y precio promo, categoría, foto principal en PNG (preferiblemente sin fondo), carrusel de hasta 4 fotos secundarias, casilla «Destacado», etiqueta promo (por ejemplo <code>20% OFF Hoy</code>) y fecha de validez. <span class="why">Cada campo alimenta una columna de la hoja «Productos».</span></li>
+      <li><strong>Pulsa «Guardar Producto».</strong> <span class="why">La información se envía a tu Google Sheets.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> el producto aparece en la hoja «Productos» y, al refrescar el catálogo, se muestra en el feed con su precio, foto y etiqueta.</p>
+    <p><strong>Si algo falla:</strong> si el producto no aparece, comprueba que guardaste y que la URL Exec sigue publicada con acceso «Cualquiera».</p>
+  </article>
+
+  <article class="card" id="proc-publicar-web">
+    <h2>Fase 5 · Paso 1: publica el catálogo en la web</h2>
+    <p><strong>Objetivo:</strong> obtener un enlace público que puedas compartir con tus clientes.</p>
+    <ol class="steps">
+      <li><strong>En la esquina superior derecha de Google AI Studio, pulsa «Publish».</strong> <span class="why">Es el mecanismo de publicación directa que describe la fuente.</span></li>
+      <li><strong>Escribe el subdominio gratuito que deseas</strong>, por ejemplo <code>mitienda.studios.app</code>. <span class="why">Será la dirección pública de tu catálogo.</span></li>
+      <li><strong>Respeta las reglas del subdominio:</strong> entre 6 y 63 caracteres, solo letras minúsculas y números, y debe comenzar y terminar con letra o número. <span class="why">Si no cumple las reglas, la publicación será rechazada.</span></li>
+      <li><strong>Pulsa «Publish Application».</strong> <span class="why">El catálogo queda accesible desde cualquier teléfono o computadora.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> tu catálogo se abre en el subdominio asignado y es navegable desde el móvil.</p>
+    <p class="warn">La fuente indica que la publicación se hace con un subdominio gratuito de AI Studio. Si tu interfaz no muestra esa opción, usa la alternativa de la siguiente tarjeta.</p>
+  </article>
+
+  <article class="card" id="proc-hosting">
+    <h2>Fase 5 · Paso 2 (alternativa): GitHub + Netlify / Vercel</h2>
+    <p><strong>Objetivo:</strong> publicar con tu propio dominio si la publicación directa no está disponible o quieres más control.</p>
+    <ol class="steps">
+      <li><strong>Exporta el código fuente</strong> (HTML/JS/CSS) desde Google AI Studio. <span class="why">Necesitas los archivos para subirlos a un repositorio.</span></li>
+      <li><strong>Sube el código a un repositorio en GitHub.</strong> <span class="why">GitHub actúa como origen del despliegue.</span></li>
+      <li><strong>Conecta el repositorio con Netlify o Vercel</strong>, plataformas de hosting gratuito. <span class="why">Detectan el proyecto y generan una URL pública.</span></li>
+      <li><strong>Configura tu dominio personalizado</strong> desde el panel correspondiente. <span class="why">Así la dirección coincide con tu marca.</span></li>
+    </ol>
+    <p class="expect"><strong>Resultado esperado:</strong> el catálogo carga desde el nuevo dominio y sigue leyendo los datos de tu URL Exec.</p>
+  </article>
+
+  <article class="card" id="proc-checklist">
+    <h2>Lista de comprobación antes de publicar</h2>
+    <p>Marca cada punto cuando lo hayas verificado. Tu progreso se guarda en este navegador.</p>
+    <div>
+      <label class="check"><input type="checkbox" data-check="pub-1"><span>La hoja de cálculo tiene las pestañas Productos, Categorías, Usuarios y Ajustes.</span></label>
+      <label class="check"><input type="checkbox" data-check="pub-2"><span>La implementación de Apps Script tiene acceso «Cualquiera» y «Ejecutar como: yo».</span></label>
+      <label class="check"><input type="checkbox" data-check="pub-3"><span>La URL Exec termina en /exec y devuelve datos JSON al abrirla en el navegador.</span></label>
+      <label class="check"><input type="checkbox" data-check="pub-4"><span>La web muestra el feed, las tarjetas y la bolsa de pedidos.</span></label>
+      <label class="check"><input type="checkbox" data-check="pub-5"><span>El número de WhatsApp está en formato internacional, sin espacios ni guiones.</span></label>
+      <label class="check"><input type="checkbox" data-check="pub-6"><span>Hay al menos una categoría y un producto de prueba con foto y precio.</span></label>
+      <label class="check"><input type="checkbox" data-check="pub-7"><span>La prueba de compra abre WhatsApp con el desglose de productos y el total.</span></label>
+      <label class="check"><input type="checkbox" data-check="pub-8"><span>El botón de PDF genera un documento legible con fotos.</span></label>
+    </div>
+    <p class="no-print" style="margin-top:12px">
+      <button class="btn" type="button" data-reset-checks="pub">Reiniciar lista</button>
+    </p>
+    <p class="expect"><strong>Resultado esperado:</strong> todas las casillas marcadas. Si alguna falla, revisa la pestaña <strong>Errores</strong> antes de compartir el enlace.</p>
+  </article>
+
+</section>
+
+<!-- ============================== PRÁCTICA ============================== -->
+<section class="tab-panel" id="panel-practica" data-title="Práctica" role="tabpanel" aria-labelledby="tab-practica" hidden>
+
+  <h1>20 ejercicios progresivos con solución</h1>
+  <p class="lead">Hazlos en orden. Cada ejercicio se apoya en el anterior. Abre la solución solo después de intentarlo: el objetivo es que practiques los clics reales, no que leas la respuesta.</p>
+
+  <article class="card" id="prac-nivel1">
+    <h2>Nivel inicial (ejercicios 1 a 7)</h2>
+    <details>
+      <summary>Ejercicio 1 — Crear la carpeta y la hoja de cálculo</summary>
+      <p><strong>Enunciado:</strong> crea en Google Drive una carpeta llamada <code>Mi_Tienda_IA</code> y, dentro, una hoja de cálculo llamada <code>Productos_v1</code>.</p>
+      <p><strong>Solución:</strong> entra en Drive &gt; «Nuevo» &gt; «Carpeta» &gt; nómbrala <code>Mi_Tienda_IA</code> &gt; entra en la carpeta &gt; «Nuevo» &gt; «Hoja de cálculo de Google» &gt; renómbrala <code>Productos_v1</code>.</p>
+      <p><strong>Qué demuestra:</strong> que sabes crear los dos artefactos base del proyecto en el lugar correcto.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 2 — Buscar un diseño en Pinterest</summary>
+      <p><strong>Enunciado:</strong> busca en Pinterest un diseño de feed de Instagram y copia la imagen o su enlace.</p>
+      <p><strong>Solución:</strong> entra en Pinterest &gt; busca <code>instagram profile ui design</code> &gt; haz clic derecho sobre la imagen elegida &gt; «Copiar imagen».</p>
+      <p><strong>Qué demuestra:</strong> que puedes obtener la referencia visual que alimentará el prompt del frontend.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 3 — Pedir el backend de una tienda de mascotas</summary>
+      <p><strong>Enunciado:</strong> entra en Gemini y solicita la creación del backend para una tienda de mascotas y accesorios.</p>
+      <p><strong>Solución:</strong> pega la plantilla del Prompt N.º 1 en Gemini e indica el nicho «tienda de mascotas y accesorios».</p>
+      <p><strong>Qué demuestra:</strong> que sabes personalizar el prompt según el negocio.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 4 — Abrir el editor de Apps Script</summary>
+      <p><strong>Enunciado:</strong> abre el editor de Apps Script desde tu hoja de cálculo.</p>
+      <p><strong>Solución:</strong> en Google Sheets, ve al menú «Extensiones» &gt; «Apps Script».</p>
+      <p><strong>Qué demuestra:</strong> que el editor queda vinculado a la hoja correcta.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 5 — Pegar el código y guardar</summary>
+      <p><strong>Enunciado:</strong> pega el código generado por Gemini en Apps Script y guarda el proyecto.</p>
+      <p><strong>Solución:</strong> borra el código existente, pega el nuevo con <code>Ctrl + V</code> y pulsa el icono del disco (Guardar).</p>
+      <p><strong>Qué demuestra:</strong> que el proyecto conserva el código sin errores de pegado.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 6 — Ejecutar la inicialización</summary>
+      <p><strong>Enunciado:</strong> ejecuta la función de inicialización para crear las pestañas automáticas.</p>
+      <p><strong>Solución:</strong> selecciona <code>inicializarBaseDeDatos</code> en el menú de funciones de la barra superior y pulsa «Ejecutar», autorizando los permisos de Google.</p>
+      <p><strong>Qué demuestra:</strong> que sabes ejecutar una función y conceder permisos.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 7 — Verificar las cuatro pestañas</summary>
+      <p><strong>Enunciado:</strong> comprueba que la hoja de cálculo contiene cuatro pestañas creadas.</p>
+      <p><strong>Solución:</strong> abre Google Sheets y confirma la presencia de «Productos», «Categorías», «Usuarios» y «Ajustes».</p>
+      <p><strong>Qué demuestra:</strong> que la base de datos tiene la estructura esperada.</p>
+    </details>
+  </article>
+
+  <article class="card" id="prac-nivel2">
+    <h2>Nivel intermedio (ejercicios 8 a 14)</h2>
+    <details>
+      <summary>Ejercicio 8 — Publicar como aplicación web</summary>
+      <p><strong>Enunciado:</strong> publica el backend de Apps Script como aplicación web con acceso «Cualquiera».</p>
+      <p><strong>Solución:</strong> pulsa «Implementar» &gt; «Nueva implementación» &gt; tipo «Aplicación web» &gt; acceso «Cualquiera» &gt; «Implementar».</p>
+      <p><strong>Qué demuestra:</strong> que la API será accesible desde la web pública.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 9 — Copiar y validar la URL Exec</summary>
+      <p><strong>Enunciado:</strong> copia y valida la URL Exec generada.</p>
+      <p><strong>Solución:</strong> copia la URL terminada en <code>/exec</code> y pégala en una pestaña nueva del navegador para comprobar que devuelve una respuesta JSON válida.</p>
+      <p><strong>Qué demuestra:</strong> que el backend responde antes de conectar el frontend.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 10 — Abrir un nuevo prompt en AI Studio</summary>
+      <p><strong>Enunciado:</strong> ingresa a Google AI Studio y abre un nuevo prompt.</p>
+      <p><strong>Solución:</strong> ve a AI Studio &gt; inicia sesión &gt; «Create New Prompt».</p>
+      <p><strong>Qué demuestra:</strong> que tienes acceso al entorno de generación del frontend.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 11 — Configurar el Prompt N.º 2</summary>
+      <p><strong>Enunciado:</strong> configura el Prompt N.º 2 con la URL Exec y la imagen de Pinterest.</p>
+      <p><strong>Solución:</strong> pega el prompt en la caja de texto, reemplaza el marcador por tu enlace y adjunta la captura de Pinterest.</p>
+      <p><strong>Qué demuestra:</strong> que sabes unir instrucción, datos y referencia visual.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 12 — Iniciar la generación del frontend</summary>
+      <p><strong>Enunciado:</strong> selecciona el modelo multimodal e inicia la generación.</p>
+      <p><strong>Solución:</strong> elige el modelo disponible (la fuente cita Gemini 3.8 Flash) en el panel derecho y pulsa «Run» / «Create».</p>
+      <p><strong>Qué demuestra:</strong> que el proceso de compilación se pone en marcha con el modelo adecuado.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 13 — Probar la vista previa</summary>
+      <p><strong>Enunciado:</strong> comprueba la vista previa de la web compilada.</p>
+      <p><strong>Solución:</strong> verifica la carga de la cabecera, el feed, los botones de me gusta y la bolsa de compras.</p>
+      <p><strong>Qué demuestra:</strong> que los componentes esenciales existen antes de cargar datos.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 14 — Registrar el primer administrador</summary>
+      <p><strong>Enunciado:</strong> registra el primer usuario administrador desde la interfaz web.</p>
+      <p><strong>Solución:</strong> ve a la sección de administración, completa los campos requeridos y pulsa «Registrar Usuario».</p>
+      <p><strong>Qué demuestra:</strong> que el sistema de autenticación está operativo.</p>
+    </details>
+  </article>
+
+  <article class="card" id="prac-nivel3">
+    <h2>Nivel avanzado (ejercicios 15 a 20)</h2>
+    <details>
+      <summary>Ejercicio 15 — Verificar la protección de la contraseña</summary>
+      <p><strong>Enunciado:</strong> comprueba que la credencial registrada está protegida en Google Sheets.</p>
+      <p><strong>Solución:</strong> abre la pestaña «Usuarios» y confirma que la contraseña aparece como una cadena resguardada (hash), no en texto legible.</p>
+      <p><strong>Qué demuestra:</strong> que la seguridad básica del panel funciona.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 16 — Configurar y probar WhatsApp</summary>
+      <p><strong>Enunciado:</strong> configura el número de WhatsApp de la tienda y prueba el mensaje predeterminado.</p>
+      <p><strong>Solución:</strong> en Administración &gt; Ajustes, introduce el teléfono en formato internacional sin espacios ni signos y guarda. Después arma un pedido y pulsa el botón de WhatsApp.</p>
+      <p><strong>Qué demuestra:</strong> que el cierre de venta funciona de extremo a extremo.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 17 — Cargar un producto en oferta</summary>
+      <p><strong>Enunciado:</strong> carga un producto con precio en oferta y etiqueta de promoción.</p>
+      <p><strong>Solución:</strong> en Productos &gt; Nuevo Producto, ingresa nombre, precio regular 100, precio promo 80, etiqueta «20% OFF» y guarda.</p>
+      <p><strong>Qué demuestra:</strong> que sabes usar los campos de promoción y su reflejo en el feed.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 18 — Prueba de compra completa</summary>
+      <p><strong>Enunciado:</strong> realiza una prueba de compra agregando productos al carrito y enviando el pedido por WhatsApp.</p>
+      <p><strong>Solución:</strong> entra como cliente, pulsa «Agregar a la bolsa» en dos productos, abre el carrito y pulsa «Pedir por WhatsApp».</p>
+      <p><strong>Qué demuestra:</strong> que el desglose de productos, cantidades y total llega correctamente al mensaje.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 19 — Exportar el catálogo a PDF</summary>
+      <p><strong>Enunciado:</strong> exporta el catálogo a PDF desde la web y verifica su formato.</p>
+      <p><strong>Solución:</strong> pulsa «Descargar PDF» o «Imprimir» y revisa la maqueta generada.</p>
+      <p><strong>Qué demuestra:</strong> que la exportación conserva productos, precios e imágenes.</p>
+    </details>
+    <details>
+      <summary>Ejercicio 20 — Publicar en un subdominio gratuito</summary>
+      <p><strong>Enunciado:</strong> publica la web en un subdominio gratuito de Google AI Studio.</p>
+      <p><strong>Solución:</strong> pulsa «Publish» en AI Studio, define el subdominio respetando las reglas y confirma la publicación.</p>
+      <p><strong>Qué demuestra:</strong> que el catálogo queda accesible públicamente para tus clientes.</p>
+    </details>
+  </article>
+
+  <article class="card" id="prac-final">
+    <h2>Práctica final: simulación de cliente</h2>
+    <p>Pide a otra persona que abra el enlace del catálogo desde su teléfono, sin explicarle nada. Observa:</p>
+    <ul>
+      <li>¿Entiende en menos de 10 segundos qué vendes?</li>
+      <li>¿Encuentra el botón para armar el pedido?</li>
+      <li>¿El mensaje de WhatsApp llega con el desglose correcto?</li>
+      <li>¿La web carga rápido con datos móviles?</li>
+    </ul>
+    <p class="note">Si la persona duda en algún punto, ese es tu siguiente ajuste: nombre del negocio, biografía, fotos o etiquetas de precio.</p>
+  </article>
+
+</section>
+
+<!-- ============================== ERRORES ============================== -->
+<section class="tab-panel" id="panel-errores" data-title="Errores" role="tabpanel" aria-labelledby="tab-errores" hidden>
+
+  <h1>Errores frecuentes y solución de problemas</h1>
+  <p class="lead">Casi todos los fallos de este proyecto vienen de cuatro causas: permisos, formato del teléfono, tamaño de las imágenes o columnas alteradas en la hoja.</p>
+
+  <article class="card" id="err-tabla">
+    <h2>Tabla de diagnóstico</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Error o problema</th>
+            <th scope="col">Causa probable</th>
+            <th scope="col">Solución paso a paso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-label="Error">La web carga vacía o dice «Error de conexión»</td>
+            <td data-label="Causa">La URL Exec no tiene permisos para «Cualquiera».</td>
+            <td data-label="Solución">Ve a Apps Script &gt; «Implementar» &gt; «Administrar implementaciones». Edita el acceso y cámbialo a «Cualquiera». Guarda y copia la nueva URL.</td>
+          </tr>
+          <tr>
+            <td data-label="Error">No se pueden crear tablas automáticas</td>
+            <td data-label="Causa">No se ejecutó la función de inicialización.</td>
+            <td data-label="Solución">En Apps Script, selecciona <code>inicializarBaseDeDatos</code> en el menú superior y pulsa «Ejecutar». Autoriza los permisos.</td>
+          </tr>
+          <tr>
+            <td data-label="Error">Las imágenes cargadas no se ven en la web</td>
+            <td data-label="Causa">Las fotos subidas a Google Drive están privadas.</td>
+            <td data-label="Solución">El backend debe otorgar permiso público a la carpeta de almacenamiento de fotos. Verifica que las fotos tengan permiso de visualización pública.</td>
+          </tr>
+          <tr>
+            <td data-label="Error">El botón de WhatsApp no abre la aplicación</td>
+            <td data-label="Causa">El número tiene guiones, espacios o le falta el código de país.</td>
+            <td data-label="Solución">En Administración &gt; Ajustes, escribe el número en formato internacional puro, sin signos ni espacios.</td>
+          </tr>
+          <tr>
+            <td data-label="Error">El PDF no incluye las fotos de los productos</td>
+            <td data-label="Causa">Incompatibilidad de formato de imagen en la conversión a PDF.</td>
+            <td data-label="Solución">Envía un prompt de corrección en AI Studio pidiendo que la generación de PDF renderice las imágenes en formato Base64 dentro del documento de impresión.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="card" id="err-evitar">
+    <h2>Errores que debes evitar desde el principio</h2>
+    <ul>
+      <li><strong>No cambiar el acceso de Apps Script a «Cualquiera»:</strong> provoca que la página web no pueda cargar los productos.</li>
+      <li><strong>Subir fotos de producto en formatos pesados (más de 5 MB):</strong> ralentiza la carga en teléfonos móviles.</li>
+      <li><strong>Escribir el número de WhatsApp con guiones o espacios:</strong> impide que se abra la aplicación al pulsar realizar pedido.</li>
+      <li><strong>Borrar las columnas generadas en Google Sheets:</strong> alterar los encabezados destruye la conexión con la API.</li>
+      <li><strong>Olvidar las credenciales de administración:</strong> obliga a reiniciar la tabla de Usuarios desde Apps Script.</li>
+    </ul>
+  </article>
+
+  <article class="card" id="err-prompt">
+    <h2>Cómo pedir una corrección a Gemini</h2>
+    <p>Cuando algo falle en la interfaz, no empieces de cero. Describe el síntoma con precisión en el mismo espacio de AI Studio. Ejemplo de prompt de corrección para el problema del PDF:</p>
+    <div class="copy-block">
+      <pre>Ajusta la función de generación de PDF para renderizar imágenes en formato Base64
+directamente en el documento de impresión.</pre>
+    </div>
+    <p>Otros prompts útiles:</p>
+    <ul>
+      <li><code>La web no muestra los productos: revisa la llamada a la URL Exec y muestra un mensaje de error claro si la respuesta falla.</code></li>
+      <li><code>El botón de WhatsApp no incluye el total: corrige el cálculo y el formato del mensaje.</code></li>
+      <li><code>Agrega paginación de 20 productos por consulta a la API de Apps Script.</code></li>
+    </ul>
+    <p class="note"><strong>Consejo:</strong> incluye siempre el mensaje de error exacto que ves en pantalla. Cuanto más concreto sea el síntoma, más útil será la corrección.</p>
+  </article>
+
+  <article class="card" id="err-limites">
+    <h2>Límites y advertencias</h2>
+    <ul>
+      <li><strong>Almacenamiento de Drive:</strong> la capa gratuita de Google ofrece 15 GB. Una foto de producto optimizada pesa alrededor de 500 KB, lo que permite miles de imágenes antes de necesitar espacio adicional.</li>
+      <li><strong>Rendimiento con muchos productos:</strong> si el catálogo supera los 1.000 productos, conviene añadir paginación o carga diferida.</li>
+      <li><strong>Modelos de IA:</strong> los nombres y la disponibilidad de modelos cambian. Si el modelo citado no aparece, usa el multimodal disponible.</li>
+      <li><strong>Servicios gratuitos:</strong> las cuotas de las capas gratuitas pueden variar con el tiempo. Verifica las condiciones actuales antes de un lanzamiento con mucho tráfico.</li>
+    </ul>
+  </article>
+
+</section>
+
+<!-- ============================== RESUMEN ============================== -->
+<section class="tab-panel" id="panel-resumen" data-title="Resumen" role="tabpanel" aria-labelledby="tab-resumen" hidden>
+
+  <h1>Resumen general</h1>
+  <p class="lead">Este tutorial ha mostrado cómo diseñar, desarrollar y publicar un catálogo interactivo estilo Instagram con herramientas gratuitas, combinando la capacidad multimodal de Gemini con la simplicidad de Google Sheets como base de datos.</p>
+
+  <article class="card" id="res-flujo">
+    <h2>El flujo en una frase</h2>
+    <p>Inspiración en Pinterest → backend en Apps Script con el Prompt N.º 1 → frontend en AI Studio con el Prompt N.º 2 y la URL Exec → administración desde Google Sheets → publicación en un subdominio gratuito o en GitHub + Netlify/Vercel.</p>
+    <p>Con ese flujo, una persona sin conocimientos técnicos puede lanzar una plataforma de ventas con carrito, pedidos directos por WhatsApp, exportación a PDF y panel de administración completo.</p>
+  </article>
+
+  <article class="card" id="res-conceptos">
+    <h2>Conceptos clave</h2>
+    <ul>
+      <li><strong>Gemini + Google AI Studio:</strong> entorno de desarrollo guiado por IA para crear aplicaciones web a partir de prompts y maquetas visuales.</li>
+      <li><strong>Google Sheets + Apps Script:</strong> dúo tecnológico que actúa como base de datos sin coste y API del servidor.</li>
+      <li><strong>URL Exec:</strong> dirección pública que conecta la base de datos con la interfaz de usuario.</li>
+      <li><strong>Catálogo estilo Instagram:</strong> interfaz dinámica basada en componentes visuales familiares (feed, tarjetas, me gusta, carrusel y perfil).</li>
+      <li><strong>Conversión directa:</strong> redireccionamiento del carrito hacia mensajes estructurados de WhatsApp.</li>
+    </ul>
+  </article>
+
+  <article class="card" id="res-faq">
+    <h2>Preguntas frecuentes (21 preguntas)</h2>
+
+    <h3>Nivel básico</h3>
+    <details>
+      <summary>1. ¿Necesito saber programar para crear este catálogo?</summary>
+      <p>No. Gemini genera el 100 % del código, tanto del backend (Apps Script) como del frontend (interfaz web). Tu trabajo consiste en copiar, pegar y seguir instrucciones en lenguaje natural.</p>
+    </details>
+    <details>
+      <summary>2. ¿Tiene algún costo mensual mantener este catálogo en línea?</summary>
+      <p>Según la fuente, es 100 % gratuito: Google Sheets, Apps Script, Drive y el hosting de Google AI Studio ofrecen capas gratuitas suficientes para miles de visitas al mes. Las cuotas pueden cambiar con el tiempo.</p>
+    </details>
+    <details>
+      <summary>3. ¿Qué sucede cuando cambio un precio en Google Sheets?</summary>
+      <p>Se actualiza automáticamente en la página web. Al refrescar el catálogo, la API lee los datos en tiempo real desde la hoja de cálculo.</p>
+    </details>
+    <details>
+      <summary>4. ¿Los clientes necesitan instalar alguna aplicación?</summary>
+      <p>No. Es una aplicación web responsive que se abre directamente en el navegador del teléfono (Chrome, Safari, Firefox) mediante un enlace o un código QR.</p>
+    </details>
+    <details>
+      <summary>5. ¿Puedo usar mi propio logotipo y colores de marca?</summary>
+      <p>Sí. Desde el panel de administración puedes subir tu logotipo, la foto de portada y definir los colores primarios y las fuentes tipográficas.</p>
+    </details>
+    <details>
+      <summary>6. ¿Dónde se guardan las fotos que subo de mis productos?</summary>
+      <p>Se almacenan de forma automática en una carpeta dedicada dentro de tu cuenta personal de Google Drive.</p>
+    </details>
+    <details>
+      <summary>7. ¿Cómo recibe el vendedor los pedidos de los clientes?</summary>
+      <p>Al pulsar «Enviar pedido», la web abre la aplicación de WhatsApp del cliente con un mensaje preescrito que detalla productos seleccionados, cantidades, precios y total.</p>
+    </details>
+
+    <h3>Nivel avanzado</h3>
+    <details>
+      <summary>8. ¿Qué es la URL Exec y por qué es fundamental?</summary>
+      <p>Es la dirección web que convierte tu Google Sheets en una API. Sin esta URL, la interfaz visual no puede comunicarse con la base de datos.</p>
+    </details>
+    <details>
+      <summary>9. ¿Por qué es obligatorio configurar el acceso de Apps Script como «Cualquiera»?</summary>
+      <p>Porque si se configura como «Solo yo», únicamente tú podrías ver los productos estando conectado con tu cuenta de Google. Al marcar «Cualquiera», la web del catálogo queda abierta al público.</p>
+    </details>
+    <details>
+      <summary>10. ¿Cómo se protege el panel de administración?</summary>
+      <p>El backend utiliza autenticación por token y resguarda las contraseñas en la hoja mediante un algoritmo hash.</p>
+    </details>
+    <details>
+      <summary>11. ¿Puedo organizar mis productos por categorías personalizadas?</summary>
+      <p>Sí. Puedes crear categorías ilimitadas (entradas, postres, promociones…) y asignar cada producto a la correspondiente.</p>
+    </details>
+    <details>
+      <summary>12. ¿Qué ocurre si supero el límite de almacenamiento de Google Drive?</summary>
+      <p>La capa gratuita de Google otorga 15 GB. Una foto optimizada pesa unos 500 KB, lo que permite almacenar miles de imágenes antes de requerir espacio adicional.</p>
+    </details>
+    <details>
+      <summary>13. ¿Cómo funciona el carrusel de fotografías por producto?</summary>
+      <p>En la ficha del producto puedes subir una imagen principal y hasta cuatro secundarias. La interfaz generada por Gemini las organiza en una barra deslizante interactiva.</p>
+    </details>
+    <details>
+      <summary>14. ¿Es posible aplicar descuentos por tiempo limitado?</summary>
+      <p>Sí. El sistema permite ingresar precio regular, precio promo, un texto de etiqueta (por ejemplo «30 % OFF») y una fecha de expiración para mostrar la oferta.</p>
+    </details>
+
+    <h3>Nivel PRO</h3>
+    <details>
+      <summary>15. ¿Cómo puedo conectar un dominio personalizado?</summary>
+      <p>Exporta el código HTML/JS/CSS desde Google AI Studio, súbelo a un repositorio en GitHub y despliégalo gratis en Vercel o Netlify asignando tu DNS personalizado.</p>
+    </details>
+    <details>
+      <summary>16. ¿Qué hago si la compilación en AI Studio tarda demasiado o se detiene?</summary>
+      <p>Asegúrate de utilizar el modelo recomendado, reduce el tamaño de la imagen de referencia (máximo 2 MB) y simplifica la instrucción inicial.</p>
+    </details>
+    <details>
+      <summary>17. ¿Cómo soluciono problemas de rendimiento con más de 1.000 productos?</summary>
+      <p>Implementa paginación o carga perezosa (lazy loading) solicitándolo a Gemini con un prompt del tipo: «Agrega paginación de 20 productos por consulta a la API de Apps Script».</p>
+    </details>
+    <details>
+      <summary>18. ¿Qué ventajas tiene migrar el backend a una base de datos NoSQL?</summary>
+      <p>Permite conexiones en tiempo real, mayor velocidad de respuesta ante solicitudes simultáneas y manejo de millones de registros sin las limitaciones de filas de Sheets.</p>
+    </details>
+    <details>
+      <summary>19. ¿Cómo optimizo las fotos PNG para que la web cargue rápido en móvil?</summary>
+      <p>Pide a Gemini que incorpore una función de compresión automática del lado del cliente utilizando un elemento Canvas HTML5 antes de enviar la imagen a Google Drive.</p>
+    </details>
+    <details>
+      <summary>20. ¿Es posible integrar pasarelas de pago como Stripe o Mercado Pago?</summary>
+      <p>Sí. Se puede solicitar a Gemini en AI Studio que agregue el SDK de Mercado Pago o Stripe Checkout en la ventana flotante de la bolsa de compras antes de derivar a WhatsApp.</p>
+    </details>
+    <details>
+      <summary>21. ¿Qué seguridad se aplica contra inyecciones de código en Google Sheets?</summary>
+      <p>El código Apps Script generado sanitiza las entradas de texto en las consultas y utiliza codificación JSON estricta al devolver los datos a la interfaz visual.</p>
+    </details>
+  </article>
+
+  <article class="card" id="res-glosario">
+    <h2>Glosario de términos</h2>
+    <ul>
+      <li><strong>API (Application Programming Interface):</strong> mecanismo de comunicación entre dos sistemas de software.</li>
+      <li><strong>Backend:</strong> servidor y base de datos donde se procesa y almacena la información de la tienda.</li>
+      <li><strong>Frontend:</strong> la interfaz gráfica con la que interactúa el usuario o cliente final.</li>
+      <li><strong>Google AI Studio:</strong> entorno de desarrollo para prototipar aplicaciones impulsadas por los modelos Gemini de Google.</li>
+      <li><strong>Google Apps Script:</strong> lenguaje basado en JavaScript que permite automatizar tareas en Google Workspace.</li>
+      <li><strong>Protección hash:</strong> algoritmo matemático que convierte una clave de acceso en una secuencia protegida e irreversible.</li>
+      <li><strong>No-Code / Low-Code:</strong> metodología de creación de software que minimiza o elimina la escritura manual de código.</li>
+      <li><strong>Prompt:</strong> texto con instrucciones detalladas entregado a un modelo de lenguaje para generar un resultado específico.</li>
+      <li><strong>Responsive:</strong> diseño web adaptable a la pantalla de cualquier dispositivo.</li>
+      <li><strong>URL Exec:</strong> enlace ejecutable de una aplicación web creada con Google Apps Script.</li>
+    </ul>
+  </article>
+
+  <article class="card" id="res-aprender">
+    <h2>Cómo seguir aprendiendo</h2>
+    <ul>
+      <li><strong>Canal oficial de FER PAUL (YouTube):</strong> para descubrir nuevos tutoriales de creación de aplicaciones No-Code con Gemini y Google AI Studio.</li>
+      <li><strong>Documentación oficial de Google Apps Script:</strong> para aprender a extender las funciones de Google Sheets.</li>
+      <li><strong>Comunidad de Google AI Studio:</strong> para explorar nuevos prompts, modelos de razonamiento y técnicas de desarrollo asistido por IA.</li>
+    </ul>
+  </article>
+
+  <article class="card" id="res-aceptacion">
+    <h2>Lista de aceptación final</h2>
+    <p>Antes de compartir el enlace con clientes, marca cada punto:</p>
+    <div>
+      <label class="check"><input type="checkbox" data-check="fin-1"><span>El contenido del catálogo coincide con lo que vendo.</span></label>
+      <label class="check"><input type="checkbox" data-check="fin-2"><span>Los precios y promociones están actualizados en Google Sheets.</span></label>
+      <label class="check"><input type="checkbox" data-check="fin-3"><span>Las fotos cargan con buena calidad y peso razonable.</span></label>
+      <label class="check"><input type="checkbox" data-check="fin-4"><span>El pedido de prueba llega completo a WhatsApp.</span></label>
+      <label class="check"><input type="checkbox" data-check="fin-5"><span>El PDF se genera con fotos y precios.</span></label>
+      <label class="check"><input type="checkbox" data-check="fin-6"><span>El panel de administración está protegido y recuerdo mis credenciales.</span></label>
+      <label class="check"><input type="checkbox" data-check="fin-7"><span>La web se ve bien en un teléfono real, no solo en la vista previa.</span></label>
+      <label class="check"><input type="checkbox" data-check="fin-8"><span>Tengo guardada una copia de la URL Exec y del enlace público.</span></label>
+    </div>
+    <p class="no-print" style="margin-top:12px">
+      <button class="btn" type="button" data-reset-checks="fin">Reiniciar lista</button>
+    </p>
+  </article>
+
+</section>
+
+<!-- ============================== FUENTES ============================== -->
+<section class="tab-panel" id="panel-fuentes" data-title="Fuentes" role="tabpanel" aria-labelledby="tab-fuentes" hidden>
+
+  <h1>Fuentes y recursos</h1>
+
+  <article class="card" id="fue-video">
+    <h2>Vídeo de referencia</h2>
+    <ul>
+      <li><strong>Título:</strong> «CREA CATÁLOGOS estilo INSTAGRAM con GEMINI 4 + Google Sheets ¡GRATIS!»</li>
+      <li><strong>Autor:</strong> FER PAUL</li>
+      <li><strong>Canal:</strong> YouTube</li>
+      <li><strong>URL:</strong></li>
+    </ul>
+    <div class="copy-block">
+      <p class="copy-src" style="word-break:break-all;margin:0">https://youtube.com/watch?v=MLo5S9JPdoQ&amp;is=ZvPHIXpL05V01-78</p>
+    </div>
+    <p><a href="https://youtube.com/watch?v=MLo5S9JPdoQ&amp;is=ZvPHIXpL05V01-78" target="_blank" rel="noopener noreferrer">Abrir el vídeo en YouTube</a></p>
+  </article>
+
+  <article class="card" id="fue-plataformas">
+    <h2>Plataformas y recursos utilizados</h2>
+    <ul>
+      <li><strong>Google AI Studio:</strong> entorno de desarrollo y modelos Gemini.</li>
+      <li><strong>Google Drive:</strong> almacenamiento de la base de datos y de los archivos.</li>
+      <li><strong>Google Sheets:</strong> gestión de las tablas de datos.</li>
+      <li><strong>Google Apps Script:</strong> backend y publicación como aplicación web.</li>
+      <li><strong>Pinterest:</strong> inspiración y maquetas de interfaz de usuario.</li>
+    </ul>
+  </article>
+
+  <article class="card" id="fue-verificacion">
+    <h2>Nota de verificación</h2>
+    <p>Este tutorial se construyó a partir del documento <em>«Catálogos estilo Instagram con Gemini: Guía completa paso a paso desde cero»</em>, que a su vez documenta el flujo de trabajo del vídeo de FER PAUL.</p>
+    <ul>
+      <li><strong>Contenido tomado de la fuente:</strong> el flujo de cinco fases, la estructura de pestañas de la base de datos, las advertencias sobre el permiso «Cualquiera», la tabla comparativa, los 20 ejercicios, las 21 preguntas frecuentes, el glosario y la tabla de errores.</li>
+      <li><strong>Contenido derivado:</strong> la plantilla del Prompt N.º 1 (la fuente lo menciona pero no reproduce su texto íntegro) y la estructura del Prompt N.º 2 (la fuente muestra un resumen, no el texto completo).</li>
+      <li><strong>Pendiente de verificación en tu entorno:</strong> los nombres exactos de botones y modelos en Google AI Studio, la disponibilidad del subdominio gratuito de publicación y el comportamiento del mecanismo de exportación a PDF. Las interfaces de estas herramientas cambian con frecuencia.</li>
+      <li><strong>No se ha ejecutado:</strong> ninguna prueba real en Google Sheets, Apps Script ni AI Studio desde este documento. Las instrucciones reproducen el procedimiento documentado; la ejecución depende de tu cuenta y de la versión actual de las herramientas.</li>
+    </ul>
+    <p class="warn">Si encuentras una diferencia entre este tutorial y lo que ves en pantalla, prioriza la interfaz actual de la herramienta y, si es posible, contrasta con el vídeo de referencia.</p>
+  </article>
+
+</section>
+
+<!-- ============================== CRÉDITOS ============================== -->
+<section class="tab-panel" id="panel-creditos" data-title="Créditos" role="tabpanel" aria-labelledby="tab-creditos" hidden>
+
+  <h1>Créditos</h1>
+
+  <div class="svg-hero" data-svg-container
+       data-alt="Ilustración animada: un teléfono móvil muestra un catálogo tipo Instagram con tarjetas de productos, un corazón de me gusta, una bolsa de pedidos y una burbuja de chat de WhatsApp."
+       role="img"
+       aria-label="Ilustración animada: un teléfono móvil muestra un catálogo tipo Instagram con tarjetas de productos, un corazón de me gusta, una bolsa de pedidos y una burbuja de chat de WhatsApp."></div>
+
+  <div class="card">
+    <p>La ilustración animada representa el corazón del proyecto: un teléfono con un catálogo en cuadrícula, tarjetas de producto que flotan, un corazón de «me gusta», una bolsa de pedidos y una burbuja de chat que simboliza el envío del pedido a WhatsApp.</p>
+
+    <p class="author">Rubén Sbarsky</p>
+    <p class="author-role">Autor del tutorial</p>
+
+    <p>Tutorial interactivo elaborado a partir del material documentado del vídeo de <strong>FER PAUL</strong> sobre la creación de catálogos estilo Instagram con Gemini, Google Sheets y Google AI Studio.</p>
+    <p>El documento está pensado para principiantes absolutos: explica los conceptos antes de usarlos, propone procedimientos con resultado esperado y ofrece ejercicios con solución.</p>
+
+    <p class="version">Versión del archivo: V001 — <code>tutorial_catalogos_instagram_gemini_V001.html</code><br>
+    Fecha y hora de creación: 18/10/2026 — 14:27:13</p>
+  </div>
+
+</section>
+
+</main>
+
+<footer>
+  <p>Tutorial interactivo · Catálogos estilo Instagram con Gemini · V001 · 18/10/2026 — 14:27:13</p>
+  <p>Contenido basado en la documentación del vídeo de FER PAUL. Las interfaces de Google pueden cambiar.</p>
+</footer>
+
+<button id="toTop" type="button" aria-label="Volver arriba" hidden>↑</button>
+
+<div id="copyModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="copyModalTitle">
+  <div class="modal-box">
+    <h3 id="copyModalTitle">No se pudo copiar automáticamente</h3>
+    <p>Selecciona el texto y cópialo con <code>Ctrl + C</code> (o mantén pulsado en el móvil).</p>
+    <textarea id="copyArea" readonly aria-label="Texto para copiar manualmente"></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="copyClose" type="button">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Plantilla SVG única. Se elimina del DOM tras extraerla. -->
+<div id="svg-source" hidden aria-hidden="true">
+<svg viewBox="0 0 420 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="__P__bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e3a5f"/>
+    </linearGradient>
+    <linearGradient id="__P__accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <linearGradient id="__P__pink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f472b6"/><stop offset="1" stop-color="#fb7185"/>
+    </linearGradient>
+    <linearGradient id="__P__card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e293b"/><stop offset="1" stop-color="#111c31"/>
+    </linearGradient>
+    <filter id="__P__glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="420" height="240" rx="18" fill="url(#__P__bg)"/>
+
+  <circle cx="34" cy="30" r="2.5" fill="#38bdf8" opacity=".6" class="svgPulse"/>
+  <circle cx="392" cy="44" r="2" fill="#f472b6" opacity=".6" class="svgPulse" style="animation-delay:1.2s"/>
+  <circle cx="388" cy="210" r="2.5" fill="#38bdf8" opacity=".5" class="svgPulse" style="animation-delay:.6s"/>
+
+  <!-- Teléfono con catálogo -->
+  <g>
+    <rect x="156" y="24" width="108" height="192" rx="18" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+    <rect x="163" y="31" width="94" height="178" rx="12" fill="#0b1220"/>
+    <rect x="196" y="35" width="28" height="4" rx="2" fill="#334155"/>
+    <circle cx="184" cy="56" r="9" fill="url(#__P__accent)"/>
+    <rect x="198" y="48" width="34" height="5" rx="2.5" fill="#e2e8f0" opacity=".85"/>
+    <rect x="198" y="57" width="26" height="4" rx="2" fill="#64748b"/>
+    <rect x="198" y="65" width="20" height="4" rx="2" fill="#475569"/>
+    <g fill="url(#__P__card)" stroke="#334155" stroke-width=".8">
+      <rect x="168" y="78" width="38" height="38" rx="5"/>
+      <rect x="212" y="78" width="38" height="38" rx="5"/>
+      <rect x="168" y="122" width="38" height="38" rx="5"/>
+      <rect x="212" y="122" width="38" height="38" rx="5"/>
+      <rect x="168" y="166" width="38" height="38" rx="5"/>
+      <rect x="212" y="166" width="38" height="38" rx="5"/>
+    </g>
+    <g fill="#38bdf8" opacity=".85">
+      <rect x="173" y="104" width="18" height="3" rx="1.5"/>
+      <rect x="217" y="104" width="18" height="3" rx="1.5"/>
+      <rect x="173" y="148" width="18" height="3" rx="1.5"/>
+      <rect x="217" y="148" width="18" height="3" rx="1.5"/>
+      <rect x="173" y="192" width="18" height="3" rx="1.5"/>
+      <rect x="217" y="192" width="18" height="3" rx="1.5"/>
+    </g>
+  </g>
+
+  <!-- Tarjeta flotante izquierda -->
+  <g class="svgFloat">
+    <rect x="20" y="84" width="106" height="76" rx="10" fill="url(#__P__card)" stroke="#38bdf8" stroke-width="1.2"/>
+    <rect x="28" y="92" width="42" height="34" rx="5" fill="#334155"/>
+    <circle cx="49" cy="109" r="8" fill="#38bdf8" opacity=".65"/>
+    <rect x="76" y="94" width="40" height="6" rx="3" fill="#e2e8f0" opacity=".8"/>
+    <rect x="76" y="105" width="30" height="5" rx="2.5" fill="#64748b"/>
+    <rect x="76" y="114" width="34" height="5" rx="2.5" fill="#475569"/>
+    <rect x="28" y="134" width="38" height="12" rx="6" fill="url(#__P__accent)"/>
+    <rect x="72" y="136" width="20" height="8" rx="4" fill="#1e3a5f"/>
+  </g>
+
+  <path d="M126 122 C140 122 144 122 156 122" stroke="#38bdf8" stroke-width="1.6" fill="none" opacity=".7" class="svgDash"/>
+
+  <!-- Burbuja de chat -->
+  <g class="svgFloatB">
+    <rect x="286" y="52" width="108" height="48" rx="12" fill="url(#__P__card)" stroke="#334155" stroke-width="1.2"/>
+    <path d="M300 100 L296 110 L310 100 Z" fill="url(#__P__card)"/>
+    <rect x="296" y="62" width="60" height="5" rx="2.5" fill="#e2e8f0" opacity=".8"/>
+    <rect x="296" y="72" width="78" height="5" rx="2.5" fill="#64748b"/>
+    <rect x="296" y="82" width="46" height="5" rx="2.5" fill="#475569"/>
+  </g>
+  <path d="M264 96 C274 90 276 78 286 74" stroke="#38bdf8" stroke-width="1.6" fill="none" opacity=".7" class="svgDash"/>
+
+  <!-- Corazón -->
+  <g class="svgPulse">
+    <circle cx="300" cy="140" r="16" fill="#1e293b" stroke="#f472b6" stroke-width="1.2"/>
+    <path d="M300 147 C294 142 291 139 291 136 C291 133 293 131 296 131 C298 131 299 132 300 133 C301 132 302 131 304 131 C307 131 309 133 309 136 C309 139 306 142 300 147 Z" fill="url(#__P__pink)"/>
+  </g>
+
+  <!-- Bolsa de pedidos -->
+  <g class="svgFloat" style="animation-delay:.9s">
+    <circle cx="344" cy="184" r="20" fill="#1e293b" stroke="#38bdf8" stroke-width="1.2"/>
+    <path d="M337 178 h14 l2 14 h-18 z" fill="none" stroke="#38bdf8" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M340 178 v-3 a4 4 0 0 1 8 0 v3" fill="none" stroke="#38bdf8" stroke-width="1.6"/>
+  </g>
+
+  <g fill="#38bdf8" opacity=".5">
+    <circle cx="60" cy="60" r="1.5"/>
+    <circle cx="360" cy="30" r="1.5"/>
+    <circle cx="30" cy="190" r="1.5"/>
+  </g>
+</svg>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ============ ALMACENAMIENTO SEGURO ============ */
+  var LS_KEY = 'tut_catalogo_gemini_v1';
+  var saved = {};
+  try {
+    saved = JSON.parse(localStorage.getItem(LS_KEY) || '{}') || {};
+  } catch(e) { saved = {}; }
+  function persist(){
+    try { localStorage.setItem(LS_KEY, JSON.stringify(saved)); } catch(e) {}
+  }
+
+  /* ============ TEMA ============ */
+  function applyTheme(t){
+    var theme = (t === 'light') ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', theme);
+    var b = document.getElementById('btnTheme');
+    if (b) {
+      b.textContent = (theme === 'light') ? 'Tema oscuro' : 'Tema claro';
+      b.setAttribute('aria-pressed', theme === 'light' ? 'true' : 'false');
+    }
+  }
+  applyTheme(saved.theme || 'dark');
+
+  /* ============ TAMAÑO DE LETRA ============ */
+  var fontScale = Number(saved.font) || 100;
+  function applyFont(){
+    if (isNaN(fontScale)) fontScale = 100;
+    fontScale = Math.min(140, Math.max(85, fontScale));
+    document.documentElement.style.fontSize = (16 * fontScale / 100).toFixed(2) + 'px';
+    var b = document.getElementById('btnFontReset');
+    if (b) b.textContent = fontScale + '%';
+  }
+  applyFont();
+
+  /* ============ PESTAÑAS ============ */
+  var TABS = ['inicio','conceptos','procedimiento','practica','errores','resumen','fuentes','creditos'];
+  var TAB_NAMES = {
+    inicio:'Inicio', conceptos:'Conceptos', procedimiento:'Procedimiento',
+    practica:'Práctica', errores:'Errores', resumen:'Resumen',
+    fuentes:'Fuentes', creditos:'Créditos'
+  };
+  var tabButtons = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+
+  function activateTab(id, opts){
+    opts = opts || {};
+    if (TABS.indexOf(id) === -1) id = 'inicio';
+    tabButtons.forEach(function(b){
+      var on = b.getAttribute('data-tab') === id;
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    document.querySelectorAll('.tab-panel').forEach(function(p){
+      var on = p.id === 'panel-' + id;
+      p.classList.toggle('active', on);
+      if (on) p.removeAttribute('hidden'); else p.setAttribute('hidden','');
+    });
+    if (!opts.silent) { saved.tab = id; persist(); }
+
+    if (id === 'inicio' || id === 'creditos') {
+      var c = document.querySelector('#panel-' + id + ' [data-svg-container]');
+      if (c) {
+        if (!c.querySelector('svg, img')) mountSvg(c);
+        else restartSvg(c);
+      }
+    }
+    if (opts.scroll !== false) {
+      var main = document.getElementById('main');
+      var y = main.getBoundingClientRect().top + window.pageYOffset - 58;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    }
+    try { history.replaceState(null, '', '#' + id); } catch(e) {}
+  }
+
+  tabButtons.forEach(function(b){
+    b.addEventListener('click', function(){
+      activateTab(b.getAttribute('data-tab'));
+    });
+    b.addEventListener('keydown', function(ev){
+      var i = TABS.indexOf(b.getAttribute('data-tab'));
+      if (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft') {
+        ev.preventDefault();
+        var next = ev.key === 'ArrowRight' ? (i + 1) % TABS.length : (i - 1 + TABS.length) % TABS.length;
+        var nb = tabButtons[next];
+        nb.focus();
+        activateTab(TABS[next]);
+      }
+    });
+  });
+
+  /* ============ SVG COMPARTIDO ============ */
+  var svgTemplate = '';
+  var srcEl = document.getElementById('svg-source');
+  if (srcEl) {
+    svgTemplate = srcEl.innerHTML;
+    srcEl.parentNode.removeChild(srcEl);
+  }
+  var svgSeq = 0;
+
+  function svgIsAnimated(root){
+    try {
+      if (typeof root.getAnimations === 'function') {
+        return root.getAnimations({ subtree: true }).length > 0;
+      }
+    } catch(e) {}
+    try {
+      var el = root.querySelector('.svgFloat, .svgPulse, .svgDash');
+      if (!el) return false;
+      var cs = window.getComputedStyle(el);
+      return !!cs.animationName && cs.animationName !== 'none';
+    } catch(e) { return true; }
+  }
+
+  function staticFallback(container, markup, alt){
+    try {
+      var img = document.createElement('img');
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(markup);
+      img.alt = alt;
+      container.innerHTML = '';
+      container.appendChild(img);
+      container.setAttribute('data-fallback','1');
+    } catch(e) {}
+  }
+
+  function mountSvg(container){
+    if (!container || !svgTemplate) return;
+    if (container.querySelector('svg, img')) return;
+    var prefix = 'p' + (++svgSeq) + '_';
+    var markup = svgTemplate.split('__P__').join(prefix);
+    container.innerHTML = markup;
+    var alt = container.getAttribute('data-alt') || 'Ilustración animada del tutorial';
+    window.setTimeout(function(){
+      var svg = container.querySelector('svg');
+      if (svg && !svgIsAnimated(svg)) staticFallback(container, markup, alt);
+    }, 800);
+  }
+
+  function restartSvg(container){
+    try {
+      var svg = container.querySelector('svg');
+      if (svg && typeof svg.getAnimations === 'function') {
+        svg.getAnimations({ subtree: true }).forEach(function(a){
+          try { a.currentTime = 0; a.play(); } catch(e) {}
+        });
+      }
+    } catch(e) {}
+  }
+
+  // Reparación periódica de contenedores visibles vacíos
+  window.setInterval(function(){
+    document.querySelectorAll('[data-svg-container]').forEach(function(c){
+      if (c.offsetParent !== null && !c.querySelector('svg, img')) mountSvg(c);
+    });
+  }, 4000);
+
+  /* ============ BUSCADOR ============ */
+  var searchInput = document.getElementById('searchInput');
+  var resultsBox = document.getElementById('searchResults');
+  var searchIndex = [];
+  var uid = 0;
+
+  document.querySelectorAll('.tab-panel').forEach(function(panel){
+    var tab = panel.id.replace('panel-','');
+    panel.querySelectorAll('.card').forEach(function(el){
+      if (!el.id) el.id = 'sec-' + (++uid);
+      var h = el.querySelector('h2, h3, h4');
+      var title = (h ? h.textContent : el.textContent).replace(/\s+/g,' ').trim();
+      if (title.length > 85) title = title.slice(0,82) + '…';
+      searchIndex.push({ id: el.id, tab: tab, title: title, text: el.textContent.toLowerCase() });
+    });
+    panel.querySelectorAll('details').forEach(function(el){
+      if (!el.id) el.id = 'det-' + (++uid);
+      var s = el.querySelector('summary');
+      var title = (s ? s.textContent : el.textContent).replace(/\s+/g,' ').trim();
+      if (title.length > 85) title = title.slice(0,82) + '…';
+      searchIndex.push({ id: el.id, tab: tab, title: title, text: el.textContent.toLowerCase() });
+    });
+  });
+
+  function renderResults(q){
+    if (!resultsBox) return;
+    resultsBox.innerHTML = '';
+    q = (q || '').trim().toLowerCase();
+    if (q.length < 2) { resultsBox.hidden = true; return; }
+
+    var hits = searchIndex.filter(function(item){
+      return item.text.indexOf(q) !== -1;
+    }).slice(0, 12);
+
+    if (!hits.length) {
+      var empty = document.createElement('div');
+      empty.className = 'search-empty';
+      empty.textContent = 'Sin resultados para «' + q + '».';
+      resultsBox.appendChild(empty);
+      resultsBox.hidden = false;
+      return;
+    }
+
+    hits.forEach(function(h){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'search-item';
+      var s = document.createElement('span');
+      s.className = 'search-tab';
+      s.textContent = TAB_NAMES[h.tab] || h.tab;
+      var t = document.createElement('span');
+      t.className = 'search-title';
+      t.textContent = h.title;
+      b.appendChild(s);
+      b.appendChild(t);
+      b.addEventListener('click', function(){
+        resultsBox.hidden = true;
+        searchInput.value = '';
+        activateTab(h.tab, { scroll: false });
+        window.setTimeout(function(){
+          var el = document.getElementById(h.id);
+          if (el) {
+            if (el.tagName === 'DETAILS') el.open = true;
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.classList.add('flash');
+            window.setTimeout(function(){ el.classList.remove('flash'); }, 2000);
+          }
+        }, 90);
+      });
+      resultsBox.appendChild(b);
+    });
+    resultsBox.hidden = false;
+  }
+
+  var searchTimer = null;
+  if (searchInput) {
+    searchInput.addEventListener('input', function(){
+      clearTimeout(searchTimer);
+      var v = searchInput.value;
+      searchTimer = setTimeout(function(){ renderResults(v); }, 140);
+    });
+    searchInput.addEventListener('keydown', function(ev){
+      if (ev.key === 'Escape') {
+        resultsBox.hidden = true;
+        searchInput.blur();
+      }
+      if (ev.key === 'Enter') {
+        var first = resultsBox.querySelector('.search-item');
+        if (first && !resultsBox.hidden) { ev.preventDefault(); first.click(); }
+      }
+    });
+    document.addEventListener('click', function(ev){
+      if (!ev.target.closest('.search-wrap')) resultsBox.hidden = true;
+    });
+  }
+
+  /* ============ COPIAR ============ */
+  function copyText(text){
+    return new Promise(function(resolve){
+      var done = false;
+      function finish(ok){ if (!done) { done = true; resolve(ok); } }
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(function(){ finish(true); }).catch(function(){ fallback(); });
+        } else {
+          fallback();
+        }
+      } catch(e) { fallback(); }
+
+      function fallback(){
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly','');
+          ta.style.position = 'fixed';
+          ta.style.top = '-1000px';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          var ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          finish(!!ok);
+        } catch(e) {
+          finish(false);
+        }
+      }
+    });
+  }
+
+  var copyModal = document.getElementById('copyModal');
+  var copyArea = document.getElementById('copyArea');
+  function showCopyModal(text){
+    if (!copyModal || !copyArea) return;
+    copyArea.value = text;
+    copyModal.hidden = false;
+    document.body.classList.add('modal-open');
+    window.setTimeout(function(){ copyArea.focus(); copyArea.select(); }, 40);
+  }
+  function closeCopyModal(){
+    if (!copyModal) return;
+    copyModal.hidden = true;
+    document.body.classList.remove('modal-open');
+  }
+  if (copyModal) {
+    copyModal.addEventListener('click', function(ev){ if (ev.target === copyModal) closeCopyModal(); });
+    var copyCloseBtn = document.getElementById('copyClose');
+    if (copyCloseBtn) copyCloseBtn.addEventListener('click', closeCopyModal);
+    document.addEventListener('keydown', function(ev){
+      if (ev.key === 'Escape' && !copyModal.hidden) closeCopyModal();
+    });
+  }
+
+  document.querySelectorAll('.copy-block').forEach(function(block){
+    if (block.querySelector('.copy-btn')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copiar';
+    btn.addEventListener('click', function(){
+      var src = block.querySelector('pre, .copy-src');
+      var text;
+      if (src) {
+        text = (src.tagName === 'PRE' || src.tagName === 'CODE') ? src.textContent : src.innerText;
+      } else {
+        text = block.innerText;
+      }
+      text = text.replace(/^\n+|\n+$/g, '');
+      copyText(text).then(function(ok){
+        if (ok) {
+          btn.textContent = '¡Copiado!';
+          btn.classList.add('ok');
+        } else {
+          btn.textContent = 'No se pudo';
+          showCopyModal(text);
+        }
+        window.setTimeout(function(){
+          btn.textContent = 'Copiar';
+          btn.classList.remove('ok');
+        }, 1900);
+      });
+    });
+    block.appendChild(btn);
+  });
+
+  /* ============ LISTAS DE COMPROBACIÓN ============ */
+  document.querySelectorAll('input[type="checkbox"][data-check]').forEach(function(cb){
+    var id = cb.getAttribute('data-check');
+    if (saved.checks && saved.checks[id]) cb.checked = true;
+    cb.addEventListener('change', function(){
+      if (!saved.checks) saved.checks = {};
+      saved.checks[id] = cb.checked;
+      persist();
+    });
+  });
+
+  document.querySelectorAll('[data-reset-checks]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var group = btn.getAttribute('data-reset-checks');
+      document.querySelectorAll('input[type="checkbox"][data-check^="' + group + '-"]').forEach(function(cb){
+        cb.checked = false;
+        if (saved.checks) delete saved.checks[cb.getAttribute('data-check')];
+      });
+      persist();
+      toast('Lista reiniciada');
+    });
+  });
+
+  /* ============ AVISO EMERGENTE ============ */
+  var toastTimer = null;
+  function toast(msg){
+    var t = document.getElementById('toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 3400);
+  }
+
+  /* ============ CONTROLES ============ */
+  var btnTheme = document.getElementById('btnTheme');
+  if (btnTheme) {
+    btnTheme.addEventListener('click', function(){
+      var cur = document.documentElement.getAttribute('data-theme');
+      var next = (cur === 'light') ? 'dark' : 'light';
+      applyTheme(next);
+      saved.theme = next;
+      persist();
+    });
+  }
+
+  var btnFontUp = document.getElementById('btnFontUp');
+  var btnFontDown = document.getElementById('btnFontDown');
+  var btnFontReset = document.getElementById('btnFontReset');
+  if (btnFontUp) btnFontUp.addEventListener('click', function(){
+    fontScale += 5; applyFont(); saved.font = fontScale; persist();
+  });
+  if (btnFontDown) btnFontDown.addEventListener('click', function(){
+    fontScale -= 5; applyFont(); saved.font = fontScale; persist();
+  });
+  if (btnFontReset) btnFontReset.addEventListener('click', function(){
+    fontScale = 100; applyFont(); saved.font = 100; persist();
+  });
+
+  var btnSvgPause = document.getElementById('btnSvgPause');
+  if (btnSvgPause) {
+    btnSvgPause.addEventListener('click', function(){
+      var paused = document.documentElement.classList.toggle('svg-paused');
+      btnSvgPause.textContent = paused ? 'Reanudar animación' : 'Pausar animación';
+      btnSvgPause.setAttribute('aria-pressed', paused ? 'true' : 'false');
+    });
+  }
+
+  /* ============ IMPRESIÓN ============ */
+  var printState = null;
+  function beginPrint(){
+    if (printState) return;
+    var closed = [];
+    document.querySelectorAll('details').forEach(function(d){
+      if (!d.open) { closed.push(d); d.open = true; }
+    });
+    document.querySelectorAll('[data-svg-container]').forEach(function(c){
+      if (!c.querySelector('svg, img')) mountSvg(c);
+    });
+    document.documentElement.classList.add('is-printing');
+    printState = { closed: closed };
+  }
+  function endPrint(){
+    if (!printState) return;
+    printState.closed.forEach(function(d){ d.open = false; });
+    document.documentElement.classList.remove('is-printing');
+    printState = null;
+  }
+  window.addEventListener('beforeprint', beginPrint);
+  window.addEventListener('afterprint', endPrint);
+
+  var btnPrint = document.getElementById('btnPrint');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', function(){
+      try {
+        if (typeof window.print !== 'function') throw new Error('print no disponible');
+        beginPrint();
+        window.print();
+      } catch(e) {
+        endPrint();
+        toast('Abre este archivo directamente en el navegador y utiliza Ctrl+P o Cmd+P');
+      }
+    });
+  }
+
+  /* ============ PROGRESO Y VOLVER ARRIBA ============ */
+  var progress = document.getElementById('progress');
+  var toTop = document.getElementById('toTop');
+
+  function onScroll(){
+    var doc = document.documentElement;
+    var top = window.pageYOffset || doc.scrollTop || 0;
+    var max = doc.scrollHeight - doc.clientHeight;
+    var pct = max > 0 ? (top / max) * 100 : 0;
+    if (progress) progress.style.width = pct.toFixed(2) + '%';
+    if (toTop) {
+      if (top > 500) toTop.removeAttribute('hidden');
+      else toTop.setAttribute('hidden','');
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  if (toTop) {
+    toTop.addEventListener('click', function(){
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  /* ============ INICIALIZACIÓN ============ */
+  var hash = (location.hash || '').replace('#','');
+  var initial = (TABS.indexOf(hash) !== -1) ? hash : (saved.tab && TABS.indexOf(saved.tab) !== -1 ? saved.tab : 'inicio');
+  activateTab(initial, { scroll: false, silent: true });
+
+  window.addEventListener('hashchange', function(){
+    var h = (location.hash || '').replace('#','');
+    if (TABS.indexOf(h) !== -1) activateTab(h, { scroll: false, silent: true });
+  });
+
+  // Montaje inicial del SVG visible
+  var inicioSvg = document.querySelector('#panel-inicio [data-svg-container]');
+  if (inicioSvg) mountSvg(inicioSvg);
+
+})();
+</script>
+</body>
+</html>
